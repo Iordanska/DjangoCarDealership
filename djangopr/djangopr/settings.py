@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
+    'dealership.apps.DealershipConfig',
+
 ]
 
 MIDDLEWARE = [
@@ -75,10 +78,21 @@ WSGI_APPLICATION = 'djangopr.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postresql',
+        'NAME': str(os.getenv('DATABASE')),
+        'USER': str(os.getenv('PGUSER')),
+        'PASSWORD': str(os.getenv('PGPASSWORD')),
+        'HOST': str(os.getenv('PGHOST')),
+        'PORT': str(os.getenv('PGPORT')),
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 
 # Password validation
