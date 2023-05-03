@@ -2,7 +2,6 @@ from django.db import models
 
 
 class Supplier(models.Model):
-    id = models.IntegerField(primary_key=True)
     company_name = models.CharField(max_length=100)
     date_of_foundation = models.DateTimeField()
     number_of_buyers = models.IntegerField()
@@ -17,7 +16,6 @@ class Supplier(models.Model):
 
 
 class Dealership(models.Model):
-    company_name = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     cars_type = models.CharField(max_length=100)
     balance = models.FloatField()
@@ -33,7 +31,6 @@ class Dealership(models.Model):
 
 
 class Car(models.Model):
-    id = models.IntegerField(primary_key=True)
     model = models.CharField(max_length=100)
     supplier = models.ManyToManyField(Supplier)
     drive_type = models.CharField(max_length=100)
@@ -49,7 +46,6 @@ class Car(models.Model):
 
 
 class CustomerProfile(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     balance = models.FloatField()
@@ -63,7 +59,6 @@ class CustomerProfile(models.Model):
 
 
 class Offer(models.Model):
-    id = models.IntegerField(primary_key=True)
     customer_id = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE)
     car_id = models.ForeignKey(Car, on_delete=models.CASCADE)
     max_price = models.FloatField()
@@ -86,7 +81,6 @@ class CarFeatures(models.Model):
 
 
 class DealershipCarList(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     car_id = models.ForeignKey(Car, on_delete=models.CASCADE)
     popularity = models.FloatField()
@@ -99,7 +93,6 @@ class DealershipCarList(models.Model):
 
 
 class DealershipDiscount(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     discount_start = models.DateTimeField()
     discount_end = models.DateTimeField()
@@ -117,7 +110,6 @@ class DealershipDiscount(models.Model):
 
 
 class DealershipCustomers(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     customer_id = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE)
     number_of_purchases = models.IntegerField()
@@ -131,7 +123,6 @@ class DealershipCustomers(models.Model):
 
 
 class DealershipStock(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     stock_id = models.ForeignKey(Dealership, to_field="stock_id", on_delete=models.CASCADE)
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     quantity = models.IntegerField()
@@ -159,7 +150,6 @@ class SupplierDiscount(models.Model):
 
 
 class SupplierSales(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     supplier_id = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     sale_date = models.DateTimeField(auto_now=True)
@@ -175,7 +165,6 @@ class SupplierSales(models.Model):
 
 
 class SupplierCustomers(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     supplier_id = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     is_regular_customer = models.BooleanField(default=False)
@@ -191,7 +180,6 @@ class SupplierCustomers(models.Model):
 
 
 class SupplierStock(models.Model):
-    id = models.IntegerField(auto_created=True, primary_key=True)
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     price = models.FloatField()
