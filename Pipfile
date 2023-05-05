@@ -7,6 +7,8 @@ name = "pypi"
 django = "*"
 django-countries = "*"
 psycopg2 = "*"
+python-dotenv = "*"
+django-money = "*"
 
 [dev-packages]
 
