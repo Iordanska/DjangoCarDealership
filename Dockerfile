@@ -1,0 +1,11 @@
+FROM python:3.10
+WORKDIR /usr/src/app
+
+COPY . .
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PIPENV_VENV_IN_PROJECT=1
+
+RUN pip install pipenv
+RUN pipenv sync --system
