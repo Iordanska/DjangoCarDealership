@@ -1,3 +1,3 @@
 .idea/
 .envgit rm -r course_test
-.env.dev
+.env
