@@ -1,26 +1,8 @@
-from datetime import datetime
-
-from core.mixins import DateAndActiveMixin
-from django.core.exceptions import ValidationError
 from django.db import models
 from django_countries.fields import CountryField
+from djangopr.core.mixins import DateAndActiveMixin
+from djangopr.core.validators import date_validator, year_validator
 from djmoney.models.fields import MoneyField
-
-
-def date_validator(value):
-    if value < datetime(1901, 1, 1) or value > datetime.now():
-        raise ValidationError(
-            _("%(value)s is not a correct date."),
-            params={"value": value},
-        )
-
-
-def year_validator(value):
-    if value < 1960 or value > datetime.now().year:
-        raise ValidationError(
-            _("%(value)s is not a correct year!"),
-            params={"value": value},
-        )
 
 
 def specification_default():
@@ -33,7 +15,7 @@ def specification_default():
     }
 
 
-def offer_default():
+def order_default():
     return {
         "user_id": "",
         "max_price": "",
@@ -41,69 +23,64 @@ def offer_default():
     }
 
 
+def discount_default():
+    return {
+        "discount": [
+            {"num_of_purchases": "percent"},
+        ],
+    }
+
+
 class CustomerProfile(DateAndActiveMixin):
-    M = "M"
-    F = "F"
-
-    GENDER_CHOICES = ((M, "Male"), (F, "Female"))
-
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, default=M)
+
+    class Gender(models.TextChoices):
+        M = "M", "male"
+        F = "F", "female"
+
+    gender = models.CharField(max_length=1, choices=Gender.choises, default=Gender.M)
     date_of_birth = models.DateField(validators=[date_validator])
     country = CountryField()
     balance = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD", editable=False
     )
-    offer = models.JSONField("Offer", default=offer_default)
+    order = models.JSONField("Order", default=order_default)
 
     def __str__(self):
         return str(self.name) + " " + str(self.surname)
 
 
 class Car(DateAndActiveMixin):
-    DIESEL = "diesel"
-    PETROL = "petrol"
-    ELECTRIC = "electric"
-    OTHER = "other"
-
-    FUEL_CHOICES = (
-        (DIESEL, "Diesel"),
-        (PETROL, "Petrol"),
-        (ELECTRIC, "Electric"),
-        (OTHER, "Other"),
-    )
-
-    MANUAL = "manual"
-    AUTOMATIC = "automatic"
-    SEMI_AUTOMATIC = "semi-automatic"
-
-    TRANSMISSION_CHOICES = (
-        (MANUAL, "Manual"),
-        (AUTOMATIC, "Autimatic"),
-        (SEMI_AUTOMATIC, "Semi-automatic"),
-    )
-
-    FRONT = "front-wheel"
-    REAR = "rear-wheel"
-    ALL = "4X4"
-
-    DRIVE_TYPE_CHOICES = (
-        (FRONT, "Front-wheel"),
-        (REAR, "Rear-wheel"),
-        (ALL, "4X4"),
-    )
-
     model = models.CharField(max_length=100)
-    registration_year = models.SmallIntegerField(validators=[year_validator])
     power = models.DecimalField(max_digits=3, decimal_places=2)
+
+    class Transmission(models.TextChoices):
+        MANUAL = "manual"
+        AUTOMATIC = "automatic"
+        SEMI_AUTOMATIC = "semi-automatic"
+
     transmission = models.CharField(
-        max_length=20, choices=TRANSMISSION_CHOICES, default=MANUAL
+        max_length=20, choices=Transmission.choises, default=Transmission.MANUAL
     )
-    fuel = models.CharField(max_length=20, choices=FUEL_CHOICES, default=DIESEL)
+
+    class Fuel(models.TextChoices):
+        DIESEL = "diesel"
+        PETROL = "petrol"
+        ELECTRIC = "electric"
+        OTHER = "other"
+
+    fuel = models.CharField(max_length=20, choices=Fuel.choices, default=Fuel.DIESEL)
+
+    class DriveType(models.TextChoices):
+        FRONT = "front-wheel"
+        REAR = "rear-wheel"
+        ALL = "4X4"
+
     drive_type = models.CharField(
-        max_length=20, choices=DRIVE_TYPE_CHOICES, default=REAR
+        max_length=20, choices=DriveType.choises, default=DriveType.REAR
     )
+    registration_year = models.SmallIntegerField(validators=[year_validator])
 
     def __str__(self):
         return self.model
@@ -115,6 +92,7 @@ class Supplier(DateAndActiveMixin):
     date_of_foundation = models.DateTimeField(blank=True, validators=[date_validator])
     number_of_buyers = models.IntegerField(default=0, editable=False)
     specification = models.JSONField("Specification", default=specification_default)
+    discount = models.JSONField("Discount", default=discount_default)
     number_of_purchases_for = models.PositiveIntegerField()
     primary_client_discount = models.DecimalField(
         max_digits=3, decimal_places=2, blank=True
@@ -151,14 +129,14 @@ class DealershipCars(DateAndActiveMixin):
 
 class DealershipDiscount(DateAndActiveMixin):
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
-    percent = models.DecimalField(max_digits=3, decimal_places=2)
     name = models.CharField(max_length=100)
     description = models.TextField()
+    percent = models.DecimalField(max_digits=3, decimal_places=2)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
 
     def __str__(self):
-        return self.pk
+        return str(self.pk) + " " + str(self.name)
 
 
 class DealershipUniqueCustomers(DateAndActiveMixin):

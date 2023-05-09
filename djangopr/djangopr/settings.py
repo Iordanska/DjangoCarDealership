@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_countries',
     'djmoney',
-    'core.apps.CoreConfig'
     'dealership.apps.DealershipConfig',
 
 ]
