@@ -1,9 +1,8 @@
 from django.db import models
 from django_countries.fields import CountryField
-from djangopr.core.mixins import DateAndActiveMixin
-from djangopr.core.validators import date_validator, year_validator
+from core.mixins import DateAndActiveMixin
+from core.validators import date_validator, year_validator
 from djmoney.models.fields import MoneyField
-
 
 def specification_default():
     return {
@@ -39,7 +38,7 @@ class CustomerProfile(DateAndActiveMixin):
         M = "M", "male"
         F = "F", "female"
 
-    gender = models.CharField(max_length=1, choices=Gender.choises, default=Gender.M)
+    gender = models.CharField(max_length=1, choices=Gender.choices, default=Gender.M)
     date_of_birth = models.DateField(validators=[date_validator])
     country = CountryField()
     balance = MoneyField(
@@ -61,7 +60,7 @@ class Car(DateAndActiveMixin):
         SEMI_AUTOMATIC = "semi-automatic"
 
     transmission = models.CharField(
-        max_length=20, choices=Transmission.choises, default=Transmission.MANUAL
+        max_length=20, choices=Transmission.choices, default=Transmission.MANUAL
     )
 
     class Fuel(models.TextChoices):
@@ -78,7 +77,7 @@ class Car(DateAndActiveMixin):
         ALL = "4X4"
 
     drive_type = models.CharField(
-        max_length=20, choices=DriveType.choises, default=DriveType.REAR
+        max_length=20, choices=DriveType.choices, default=DriveType.REAR
     )
     registration_year = models.SmallIntegerField(validators=[year_validator])
 
