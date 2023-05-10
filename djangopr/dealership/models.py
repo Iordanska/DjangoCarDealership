@@ -92,10 +92,6 @@ class Supplier(DateAndActiveMixin):
     number_of_buyers = models.IntegerField(default=0, editable=False)
     specification = models.JSONField("Specification", default=specification_default)
     discount = models.JSONField("Discount", default=discount_default)
-    number_of_purchases_for = models.PositiveIntegerField()
-    primary_client_discount = models.DecimalField(
-        max_digits=3, decimal_places=2, blank=True
-    )
 
     def __str__(self):
         return self.company_name
@@ -121,7 +117,6 @@ class Dealership(DateAndActiveMixin):
 class DealershipCars(DateAndActiveMixin):
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
-    supplier_id = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     quantity = models.PositiveIntegerField(default=0)
 
