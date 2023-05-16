@@ -1,8 +1,10 @@
-from django.db import models
-from django_countries.fields import CountryField
 from core.mixins import DateAndActiveMixin
 from core.validators import date_validator, year_validator
+from django.contrib.auth.models import User
+from django.db import models
+from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
+
 
 def specification_default():
     return {
@@ -30,7 +32,7 @@ def discount_default():
     }
 
 
-class CustomerProfile(DateAndActiveMixin):
+class Customer(DateAndActiveMixin):
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
 
@@ -42,9 +44,14 @@ class CustomerProfile(DateAndActiveMixin):
     date_of_birth = models.DateField(validators=[date_validator])
     country = CountryField()
     balance = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD", editable=False
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        editable=False,
+        default=100,
     )
     order = models.JSONField("Order", default=order_default)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
 
     def __str__(self):
         return str(self.name) + " " + str(self.surname)
@@ -52,7 +59,7 @@ class CustomerProfile(DateAndActiveMixin):
 
 class Car(DateAndActiveMixin):
     model = models.CharField(max_length=100)
-    power = models.DecimalField(max_digits=3, decimal_places=2)
+    power = models.FloatField()
 
     class Transmission(models.TextChoices):
         MANUAL = "manual"
@@ -88,13 +95,13 @@ class Car(DateAndActiveMixin):
 class Supplier(DateAndActiveMixin):
     cars = models.ManyToManyField(Car, through="SupplierCars")
     company_name = models.CharField(max_length=100)
-    date_of_foundation = models.DateTimeField(blank=True, validators=[date_validator])
+    date_of_foundation = models.DateField(blank=True, validators=[date_validator])
     number_of_buyers = models.IntegerField(default=0, editable=False)
     specification = models.JSONField("Specification", default=specification_default)
     discount = models.JSONField("Discount", default=discount_default)
 
     def __str__(self):
-        return self.company_name
+        return str(self.company_name)
 
 
 class SupplierCars(DateAndActiveMixin):
@@ -103,6 +110,9 @@ class SupplierCars(DateAndActiveMixin):
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     quantity = models.PositiveIntegerField(default=0)
 
+    def __str__(self):
+        return str(self.supplier_id) + " " + str(self.car)
+
 
 class Dealership(DateAndActiveMixin):
     cars = models.ManyToManyField(Car, through="DealershipCars")
@@ -110,8 +120,15 @@ class Dealership(DateAndActiveMixin):
     location = CountryField()
     specification = models.JSONField("Specification", default=specification_default)
     balance = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD", editable=False
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+        editable=False,
+        default=50000,
     )
+
+    def __str__(self):
+        return str(self.company_name)
 
 
 class DealershipCars(DateAndActiveMixin):
@@ -120,12 +137,15 @@ class DealershipCars(DateAndActiveMixin):
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     quantity = models.PositiveIntegerField(default=0)
 
+    def __str__(self):
+        return str(self.dealership_id) + " " + str(self.car)
+
 
 class DealershipDiscount(DateAndActiveMixin):
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField()
-    percent = models.DecimalField(max_digits=3, decimal_places=2)
+    percent = models.FloatField()
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
 
@@ -134,28 +154,28 @@ class DealershipDiscount(DateAndActiveMixin):
 
 
 class DealershipUniqueCustomers(DateAndActiveMixin):
-    dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
-    customer_id = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE)
-    number_of_purchases = models.PositiveIntegerField(default=0)
+    dealership_id = models.ForeignKey(
+        Dealership, on_delete=models.CASCADE, editable=False
+    )
+    customer_id = models.ForeignKey(Customer, on_delete=models.CASCADE, editable=False)
+    number_of_purchases = models.PositiveIntegerField(default=0, editable=False)
 
     def __str__(self):
-        return self.customer_id
+        return str(self.customer_id)
 
 
 class DealershipCustomerSales(DateAndActiveMixin):
     dealership_id = models.ForeignKey(
         Dealership, on_delete=models.CASCADE, editable=False
     )
-    customer_id = models.ForeignKey(
-        CustomerProfile, on_delete=models.CASCADE, editable=False
-    )
+    customer_id = models.ForeignKey(Customer, on_delete=models.CASCADE, editable=False)
     car_id = models.ForeignKey(Car, on_delete=models.CASCADE, editable=False)
     price = MoneyField(
         max_digits=14, decimal_places=2, default_currency="USD", editable=False
     )
 
     def __str__(self):
-        return self.pk
+        return str(self.pk)
 
 
 class SupplierDealershipSales(DateAndActiveMixin):
@@ -169,4 +189,4 @@ class SupplierDealershipSales(DateAndActiveMixin):
     )
 
     def __str__(self):
-        return self.pk
+        return str(self.pk)
