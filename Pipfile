@@ -10,6 +10,8 @@ psycopg2 = "*"
 python-dotenv = "*"
 django-money = "*"
 djangorestframework = "*"
+djoser = "*"
+djangorestframework-simplejwt = "*"
 
 [dev-packages]
 black = "*"
