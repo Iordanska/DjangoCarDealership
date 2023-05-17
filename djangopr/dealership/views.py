@@ -68,6 +68,7 @@ class DealershipDiscountViewSet(
 
 class DealershipUniqueCustomersView(ListAPIView):
     serializer_class = DealershipUniqueCustomersSerializer
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         queryset = DealershipUniqueCustomers.objects.filter(
@@ -75,11 +76,10 @@ class DealershipUniqueCustomersView(ListAPIView):
         )
         return queryset
 
-    permission_classes = [IsAdminUser]
-
 
 class DealershipCustomerSalesView(ListAPIView):
     serializer_class = DealershipCustomerSalesSerializer
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         queryset = DealershipCustomerSales.objects.filter(
@@ -87,19 +87,16 @@ class DealershipCustomerSalesView(ListAPIView):
         )
         return queryset
 
-    permission_classes = [IsAdminUser]
-
 
 class DealershipSupplierSalesView(ListAPIView):
     serializer_class = SupplierDealershipSalesSerializer
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         queryset = SupplierDealershipSales.objects.filter(
             dealership_id=self.kwargs["pk"]
         )
         return queryset
-
-    permission_classes = [IsAdminUser]
 
 
 class DealershipCarsView(ListAPIView):
@@ -108,9 +105,6 @@ class DealershipCarsView(ListAPIView):
     def get_queryset(self):
         queryset = DealershipCars.objects.filter(dealership_id=self.kwargs["pk"])
         return queryset
-
-
-#
 
 
 class SupplierViewSet(
@@ -123,12 +117,11 @@ class SupplierViewSet(
 
 class SupplierDealershipSalesView(ListAPIView):
     serializer_class = SupplierDealershipSalesSerializer
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         queryset = SupplierDealershipSales.objects.filter(supplier_id=self.kwargs["pk"])
         return queryset
-
-    permission_classes = [IsAdminUser]
 
 
 class SupplierCarsView(ListAPIView):

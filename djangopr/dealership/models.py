@@ -59,7 +59,7 @@ class Customer(DateAndActiveMixin):
 
 class Car(DateAndActiveMixin):
     model = models.CharField(max_length=100)
-    power = models.FloatField()
+    power = models.IntegerField()
 
     class Transmission(models.TextChoices):
         MANUAL = "manual"
