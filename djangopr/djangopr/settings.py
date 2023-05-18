@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'djoser',
     'django_countries',
+    'django_filters',
     'djmoney',
     'dealership.apps.DealershipConfig',
 
@@ -64,16 +65,20 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'djangopr.urls'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_FILTER_BACKENDS' : (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+    
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication'
-    ],
+        'rest_framework.authentication.BasicAuthentication',
+    ),
 
     'DEFAULT_PERMISSION_CLASSES':
-        [
+        (
             'rest_framework.permissions.AllowAny',
-        ],
+        ),
 
 }
 

@@ -9,7 +9,7 @@ from .models import (
     DealershipDiscount,
     Supplier,
     SupplierCars,
-    SupplierDealershipSales,
+    SupplierDealershipSales, DealershipUniqueCustomers,
 )
 
 
@@ -77,7 +77,7 @@ class DealershipDiscountSerializer(serializers.ModelSerializer):
 
 class DealershipUniqueCustomersSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DealershipDiscount
+        model = DealershipUniqueCustomers
         fields = ("dealership_id", "customer_id", "number_of_purchases")
 
 

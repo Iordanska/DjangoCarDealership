@@ -1,7 +1,9 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .views import *
+from .views import (CarViewSet, CustomerFullViewSet, CustomerViewSet,
+                    DealershipDiscountViewSet, DealershipFullViewSet,
+                    DealershipViewSet, SupplierViewSet)
 
 router = routers.SimpleRouter()
 router.register(r"cars", CarViewSet)
@@ -14,18 +16,4 @@ router.register(r"discounts", DealershipDiscountViewSet)
 
 urlpatterns = [
     path("api/v1/", include(router.urls)),
-    path(
-        "api/v1/dealership/<int:pk>/customers", DealershipUniqueCustomersView.as_view()
-    ),
-    path(
-        "api/v1/dealership/<int:pk>/history/customers",
-        DealershipCustomerSalesView.as_view(),
-    ),
-    path(
-        "api/v1/dealership/<int:pk>/history/suppliers",
-        SupplierDealershipSalesView.as_view(),
-    ),
-    path("api/v1/dealership/<int:pk>/cars", DealershipCarsView.as_view()),
-    path("api/v1/supplier/<int:pk>/history", SupplierDealershipSalesView.as_view()),
-    path("api/v1/supplier/<int:pk>/cars", SupplierCarsView.as_view()),
 ]

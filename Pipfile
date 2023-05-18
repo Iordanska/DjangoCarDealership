@@ -13,6 +13,7 @@ djangorestframework = "*"
 djoser = "*"
 djangorestframework-simplejwt = "*"
 celery = "*"
+django-filter = "*"
 
 [dev-packages]
 black = "*"
