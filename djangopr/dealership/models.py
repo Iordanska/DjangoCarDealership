@@ -1,9 +1,11 @@
-from core.mixins import DateAndActiveMixin
-from core.validators import date_validator, year_validator
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django_countries.fields import CountryField
 from djmoney.models.fields import MoneyField
+
+from core.mixins import DateAndActiveMixin
+from core.validators import date_validator, year_validator
 
 
 def specification_default():
@@ -50,7 +52,7 @@ class Customer(DateAndActiveMixin):
         editable=False,
         default=100,
     )
-    order = models.JSONField("Order", default=order_default)
+    # order = models.JSONField("Order", default=order_default)
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
 
     def __str__(self):
@@ -59,7 +61,7 @@ class Customer(DateAndActiveMixin):
 
 class Car(DateAndActiveMixin):
     model = models.CharField(max_length=100)
-    power = models.IntegerField()
+    power = models.PositiveIntegerField(default=150)
 
     class Transmission(models.TextChoices):
         MANUAL = "manual"
@@ -92,6 +94,7 @@ class Car(DateAndActiveMixin):
         return self.model
 
 
+
 class Supplier(DateAndActiveMixin):
     cars = models.ManyToManyField(Car, through="SupplierCars")
     company_name = models.CharField(max_length=100)
@@ -115,7 +118,7 @@ class SupplierCars(DateAndActiveMixin):
 
 
 class Dealership(DateAndActiveMixin):
-    cars = models.ManyToManyField(Car, through="DealershipCars")
+    cars = models.ManyToManyField(Car, through="DealershipCars", related_name="dealership")
     company_name = models.CharField(max_length=100)
     location = CountryField()
     specification = models.JSONField("Specification", default=specification_default)
@@ -132,7 +135,7 @@ class Dealership(DateAndActiveMixin):
 
 
 class DealershipCars(DateAndActiveMixin):
-    dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
+    dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE, related_name="dealershipcars")
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
     quantity = models.PositiveIntegerField(default=0)
@@ -145,7 +148,9 @@ class DealershipDiscount(DateAndActiveMixin):
     dealership_id = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField()
-    percent = models.FloatField()
+    percent = models.FloatField(
+        default=10, validators=[MinValueValidator(0.1), MaxValueValidator(100)]
+    )
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
 
