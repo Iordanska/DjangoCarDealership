@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from users.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django_countries.fields import CountryField
@@ -18,12 +18,12 @@ def specification_default():
     }
 
 
-def order_default():
-    return {
-        "user_id": "",
-        "max_price": "",
-        "car_model": "",
-    }
+# def order_default():
+#     return {
+#         "user_id": "",
+#         "max_price": "",
+#         "car_model": "",
+#     }
 
 
 def discount_default():
@@ -35,16 +35,16 @@ def discount_default():
 
 
 class Customer(DateAndActiveMixin):
-    name = models.CharField(max_length=100)
-    surname = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True)
+    surname = models.CharField(max_length=100, null=True)
 
     class Gender(models.TextChoices):
         M = "M", "male"
         F = "F", "female"
 
     gender = models.CharField(max_length=1, choices=Gender.choices, default=Gender.M)
-    date_of_birth = models.DateField(validators=[date_validator])
-    country = CountryField()
+    date_of_birth = models.DateField(validators=[date_validator], null=True)
+    country = CountryField(null=True)
     balance = MoneyField(
         max_digits=14,
         decimal_places=2,
@@ -52,8 +52,7 @@ class Customer(DateAndActiveMixin):
         editable=False,
         default=100,
     )
-    # order = models.JSONField("Order", default=order_default)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
+    user = models.OneToOneField(User,limit_choices_to={'role':'Customer'}, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
         return str(self.name) + " " + str(self.surname)
@@ -93,15 +92,24 @@ class Car(DateAndActiveMixin):
     def __str__(self):
         return self.model
 
+class Order(DateAndActiveMixin):
+    customer_id = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    car=models.ForeignKey(Car, on_delete=models.CASCADE)
+    max_price = MoneyField(
+        max_digits=14,
+        decimal_places=2,
+        default_currency="USD",
+    )
 
 
 class Supplier(DateAndActiveMixin):
     cars = models.ManyToManyField(Car, through="SupplierCars")
-    company_name = models.CharField(max_length=100)
-    date_of_foundation = models.DateField(blank=True, validators=[date_validator])
+    company_name = models.CharField(max_length=100, null=True)
+    date_of_foundation = models.DateField(null=True, validators=[date_validator])
     number_of_buyers = models.IntegerField(default=0, editable=False)
     specification = models.JSONField("Specification", default=specification_default)
     discount = models.JSONField("Discount", default=discount_default)
+    user = models.OneToOneField(User, limit_choices_to={'role':'Supplier'}, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.company_name)
@@ -119,8 +127,8 @@ class SupplierCars(DateAndActiveMixin):
 
 class Dealership(DateAndActiveMixin):
     cars = models.ManyToManyField(Car, through="DealershipCars", related_name="dealership")
-    company_name = models.CharField(max_length=100)
-    location = CountryField()
+    company_name = models.CharField(max_length=100, null=True)
+    location = CountryField(null=True)
     specification = models.JSONField("Specification", default=specification_default)
     balance = MoneyField(
         max_digits=14,
@@ -129,6 +137,7 @@ class Dealership(DateAndActiveMixin):
         editable=False,
         default=50000,
     )
+    user = models.OneToOneField(User, limit_choices_to={'role':'Dealership'},on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
         return str(self.company_name)

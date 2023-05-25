@@ -32,7 +32,6 @@ DEBUG = int(os.environ.get("DEBUG", default=1))
 ALLOWED_HOSTS = []
 # Application definition
 
-# AUTH_USER_MODEL = "accounts.models.User"
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -51,8 +50,11 @@ INSTALLED_APPS = [
     'django_filters',
     'djmoney',
     'dealership.apps.DealershipConfig',
+    'users.apps.UsersConfig'
 
 ]
+
+AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
@@ -106,14 +108,20 @@ WSGI_APPLICATION = 'djangopr.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         "ENGINE": os.environ.get("SQL_ENGINE"),
+#         "NAME": os.environ.get("SQL_DATABASE",),
+#         "USER": os.environ.get("SQL_USER"),
+#         "PASSWORD": os.environ.get("SQL_PASSWORD"),
+#         "HOST": os.environ.get("SQL_HOST"),
+#         "PORT": os.environ.get("SQL_PORT",),
+#     }
+# }
 DATABASES = {
     'default': {
-        "ENGINE": os.environ.get("SQL_ENGINE"),
-        "NAME": os.environ.get("SQL_DATABASE",),
-        "USER": os.environ.get("SQL_USER"),
-        "PASSWORD": os.environ.get("SQL_PASSWORD"),
-        "HOST": os.environ.get("SQL_HOST"),
-        "PORT": os.environ.get("SQL_PORT",),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -157,6 +165,25 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+EMAIL_PORT = 587
+
+
+DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    # 'SEND_ACTIVATION_EMAIL' : True,
+    # 'PASSWORD_CHANGED_EMAIL_CONFIRMATION' : True,
+    #'USERNAME_CHANGED_EMAIL_CONFIRMATION' : True,
+    'USER_CREATE_PASSWORD_RETYPE' : True,
+    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'SERIALIZERS' : {
+    },
+
+}
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": os.environ.get("ACCESS_TOKEN_LIFETIME"),
