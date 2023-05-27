@@ -9,7 +9,4 @@ class User(AbstractUser):
         DEALERSHIP = 'Dealership'
         SUPPLIER =  'Supplier'
 
-    email = models.EmailField(max_length=255, unique=True)
     role = models.CharField(choices=Role.choices, blank=True, null=True, max_length=20)
-
-    REQUIRED_FIELDS = ["email", "role"]

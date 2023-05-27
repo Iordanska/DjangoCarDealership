@@ -9,7 +9,7 @@ from .models import (Car, Customer, Dealership, DealershipCars,
 
 class CustomerSerializer(serializers.ModelSerializer):
     def get_balance(self, obj):
-        if self.context["request"].user.is_staff:
+        if self.context["request"].user == obj.user or self.context["request"].user.is_staff:
             return obj.balance.amount
         else:
             return None
@@ -53,7 +53,7 @@ class DealershipCarsSerializer(serializers.ModelSerializer):
 
 class DealershipSerializer(serializers.ModelSerializer):
     def get_balance(self, obj):
-        if self.context["request"].user.is_staff:
+        if self.context["request"].user == obj.user or self.context["request"].user.is_staff:
             return obj.balance.amount
         else:
             return None

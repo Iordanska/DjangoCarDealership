@@ -18,7 +18,7 @@ from .models import (Car, Customer, Dealership, DealershipCars,
                      DealershipCustomerSales, DealershipDiscount,
                      DealershipUniqueCustomers, Supplier, SupplierCars,
                      SupplierDealershipSales)
-from .permissions import IsAdminOrReadOnly, IsOwnerOrAdminUser
+from .permissions import IsOwnerOrReadOnly, IsAdminOrReadOnly, IsOwner
 from .serializers import (CarSerializer, CustomerSerializer,
                           DealershipCarsSerializer,
                           DealershipCustomerSalesSerializer,
@@ -39,7 +39,7 @@ class CustomerViewSet(
     filterset_class = CustomerFilter
     search_fields = ["surname"]
     ordering_fields = ["surname"]
-    permission_classes = [IsOwnerOrAdminUser]
+    permission_classes = [IsOwnerOrReadOnly|IsAdminUser]
 
 
 class CarViewSet(
@@ -66,12 +66,13 @@ class DealershipViewSet(
     filterset_class = DealershipFilter
     search_fields = ["company_name"]
     ordering_fields = ["company_name", "dealershipcars__price"]
+    permission_classes =  [IsOwnerOrReadOnly|IsAdminUser]
 
     @action(
         methods=["get"],
         detail=True,
         serializer_class=DealershipUniqueCustomersSerializer,
-        permission_classes=[IsAdminUser],
+        permission_classes=[IsOwner|IsAdminUser],
     )
     def customers(self, request, pk=None):
         queryset = DealershipUniqueCustomers.objects.filter(
@@ -84,7 +85,7 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=DealershipCustomerSalesSerializer,
-        permission_classes=[IsAdminUser],
+        permission_classes=[IsOwner|IsAdminUser],
     )
     def history_customers(self, request, pk=None):
         queryset = DealershipCustomerSales.objects.filter(
@@ -97,7 +98,7 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=SupplierDealershipSalesSerializer,
-        permission_classes=[IsAdminUser],
+        permission_classes=[IsOwner|IsAdminUser],
     )
     def history_suppliers(self, request, pk=None):
         queryset = SupplierDealershipSales.objects.filter(
@@ -126,13 +127,13 @@ class SupplierViewSet(ModelViewSet, DestroyModelMixin):
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
     search_fields = ["company_name"]
     ordering_fields = ["company_name", "number_of_buyers"]
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly|IsAdminUser]
 
     @action(
         methods=["get"],
         detail=True,
         serializer_class=SupplierDealershipSalesSerializer,
-        permission_classes=[IsAdminUser],
+        permission_classes=[IsOwner|IsAdminUser],
     )
     def history(self, request, pk=None):
         queryset = SupplierDealershipSales.objects.filter(supplier_id=self.kwargs["pk"])
