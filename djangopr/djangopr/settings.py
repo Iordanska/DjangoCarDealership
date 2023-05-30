@@ -48,9 +48,10 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_countries',
     'django_filters',
+    'django_celery_beat',
     'djmoney',
     'dealership.apps.DealershipConfig',
-    'users'
+    'users.apps.UsersConfig'
 
 ]
 
@@ -165,9 +166,24 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+EMAIL_PORT = 587
+
+
 DJOSER = {
-    'SEND_ACTIVATION_EMAIL' : True,
-    'SERIALIZERS' : {},
+    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    # 'SEND_ACTIVATION_EMAIL' : True,
+    # 'PASSWORD_CHANGED_EMAIL_CONFIRMATION' : True,
+    #'USERNAME_CHANGED_EMAIL_CONFIRMATION' : True,
+    'USER_CREATE_PASSWORD_RETYPE': True,
+    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'SERIALIZERS': {
+    },
+
 }
 
 SIMPLE_JWT = {
@@ -204,14 +220,14 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
 
-REDIS_HOST = '0.0.0.0'
-REDIS_PORT = '6379'"redis://127.0.0.1:6379/0"
-CELERY_BROKER_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout':3600}
-CELERY_RESULT_BACKEND = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+CELERY_BEAT_SCHEDULER='django_celery_beat.schedulers:DatabaseScheduler'
+
 
 INTERNAL_IPS = [
     "127.0.0.1",

@@ -1,12 +1,11 @@
-from django.db import models
-
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        CUSTOMER = 'Customer'
-        DEALERSHIP = 'Dealership'
-        SUPPLIER =  'Supplier'
+        CUSTOMER = "Customer"
+        DEALERSHIP = "Dealership"
+        SUPPLIER = "Supplier"
 
-    role = models.CharField(choices=Role.choices, blank=True, null=True, max_length=20)
+    role = models.CharField(choices=Role.choices, null=True, max_length=20)

@@ -15,6 +15,8 @@ djangorestframework-simplejwt = "*"
 celery = "*"
 django-filter = "*"
 drf-yasg = "*"
+redis = "*"
+django-celery-beat = "*"
 
 [dev-packages]
 black = "*"
