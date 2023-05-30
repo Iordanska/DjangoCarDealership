@@ -8,7 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from core.filters import (CarsFilter, CustomerFilter, DealershipDiscountFilter,
                           DealershipFilter)
-from core.mixins import DestroyModelMixin
+from core.mixins import CustomDestroyModelMixin
 
 from .models import (Car, Customer, Dealership,
                      DealershipCustomerSales, DealershipDiscount,
@@ -24,7 +24,7 @@ from .serializers import (CarSerializer, CustomerSerializer,
 
 
 class CustomerViewSet(
-    DestroyModelMixin,
+    CustomDestroyModelMixin,
     ModelViewSet,
 ):
     queryset = Customer.objects.all()
@@ -37,7 +37,7 @@ class CustomerViewSet(
 
 
 class CarViewSet(
-    DestroyModelMixin,
+    CustomDestroyModelMixin,
     ModelViewSet,
 ):
     queryset = Car.objects.all()
@@ -50,7 +50,7 @@ class CarViewSet(
 
 
 class DealershipViewSet(
-    DestroyModelMixin,
+    CustomDestroyModelMixin,
     ModelViewSet,
 ):
     queryset = Dealership.objects.all()
@@ -99,7 +99,7 @@ class DealershipViewSet(
 
 
 class DealershipDiscountViewSet(
-    DestroyModelMixin,
+    CustomDestroyModelMixin,
     ModelViewSet,
 ):
     serializer_class = DealershipDiscountSerializer
@@ -111,7 +111,7 @@ class DealershipDiscountViewSet(
     permission_classes = [IsAdminOrReadOnly]
 
 
-class SupplierViewSet(ModelViewSet, DestroyModelMixin):
+class SupplierViewSet(ModelViewSet, CustomDestroyModelMixin):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
