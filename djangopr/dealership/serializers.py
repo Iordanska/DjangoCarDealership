@@ -1,15 +1,30 @@
-from djmoney.models.fields import MoneyField
+from django_countries.serializers import CountryFieldMixin
 from rest_framework import serializers
 
-from .models import (Car, Customer, Dealership, DealershipCars,
-                     DealershipCustomerSales, DealershipDiscount,
-                     DealershipUniqueCustomers, Supplier, SupplierCars,
-                     SupplierDealershipSales)
+from .models import (
+    Car,
+    Customer,
+    Dealership,
+    DealershipCars,
+    DealershipCustomerSales,
+    DealershipDiscount,
+    DealershipUniqueCustomers,
+    Supplier,
+    SupplierCars,
+    SupplierDealershipSales,
+    SupplierDiscount,
+    SupplierUniqueCustomers,
+)
 
 
-class CustomerSerializer(serializers.ModelSerializer):
+class CustomerSerializer(CountryFieldMixin, serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
     def get_balance(self, obj):
-        if self.context["request"].user == obj.user or self.context["request"].user.is_staff:
+        if (
+            self.context["request"].user == obj.user
+            or self.context["request"].user.is_staff
+        ):
             return obj.balance.amount
         else:
             return None
@@ -18,16 +33,25 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        fields = ("name", "surname", "gender", "date_of_birth", "country", "balance")
+        fields = (
+            "id",
+            "name",
+            "surname",
+            "gender",
+            "date_of_birth",
+            "country",
+            "balance",
+        )
 
 
 class PriceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipCars
-        fields = ("dealership_id", "price", "quantity")
+        fields = ("price", "quantity")
 
 
 class CarSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     price_list = PriceListSerializer(
         many=True, source="dealershipcars_set", read_only=True
     )
@@ -35,6 +59,7 @@ class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
         fields = (
+            "id",
             "model",
             "power",
             "transmission",
@@ -48,31 +73,33 @@ class CarSerializer(serializers.ModelSerializer):
 class DealershipCarsSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipCars
-        fields = ("car", "price", "quantity")
+        fields = ("price", "quantity")
 
 
-class DealershipSerializer(serializers.ModelSerializer):
+class DealershipSerializer(CountryFieldMixin, serializers.ModelSerializer):
     def get_balance(self, obj):
-        if self.context["request"].user == obj.user or self.context["request"].user.is_staff:
+        if (
+            self.context["request"].user == obj.user
+            or self.context["request"].user.is_staff
+        ):
             return obj.balance.amount
         else:
             return None
 
-    cars = DealershipCarsSerializer(
-        many=True, source="dealershipcars_set", read_only=True
-    )
+    id = serializers.IntegerField(read_only=True)
+    cars = DealershipCarsSerializer(many=True, source="dealershipcars", read_only=True)
     balance = serializers.SerializerMethodField("get_balance")
 
     class Meta:
         model = Dealership
-        fields = ("cars", "company_name", "location", "specification", "balance")
+        fields = ("id", "cars", "company_name", "location", "specification", "balance")
 
 
 class DealershipDiscountSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipDiscount
         fields = (
-            "dealership_id",
+            "dealership",
             "name",
             "description",
             "percent",
@@ -84,27 +111,29 @@ class DealershipDiscountSerializer(serializers.ModelSerializer):
 class DealershipUniqueCustomersSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipUniqueCustomers
-        fields = ("dealership_id", "customer_id", "number_of_purchases")
+        fields = ("dealership", "customer", "number_of_purchases")
 
 
 class DealershipCustomerSalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipCustomerSales
-        fields = ("customer_id", "dealership_id", "car_id", "price")
+        fields = ("customer", "dealership", "car", "price")
 
 
 class SupplierCarsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplierCars
-        fields = ("supplier_id", "car", "price", "quantity")
+        fields = ("car", "price")
 
 
 class SupplierSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     cars = SupplierCarsSerializer(many=True, source="suppliercars_set", read_only=True)
 
     class Meta:
         model = Supplier
         fields = (
+            "id",
             "cars",
             "company_name",
             "date_of_foundation",
@@ -114,7 +143,26 @@ class SupplierSerializer(serializers.ModelSerializer):
         )
 
 
+class SupplierDiscountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupplierDiscount
+        fields = (
+            "supplier",
+            "name",
+            "description",
+            "percent",
+            "start_date",
+            "end_date",
+        )
+
+
+class SupplierUniqueCustomersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupplierUniqueCustomers
+        fields = ("supplier", "customer", "number_of_purchases")
+
+
 class SupplierDealershipSalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplierDealershipSales
-        fields = ("supplier_id", "dealership_id", "car_id", "price")
+        fields = ("supplier", "dealership", "car", "price")

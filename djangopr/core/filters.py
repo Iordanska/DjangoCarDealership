@@ -4,9 +4,7 @@ from dealership.models import (
     Car,
     Customer,
     Dealership,
-    DealershipUniqueCustomers,
     DealershipDiscount,
-    Supplier,
 )
 
 
