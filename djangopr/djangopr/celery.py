@@ -10,9 +10,12 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
 app.conf.CELERYBEAT_SCHEDULE = {
-    # Executes at midnight
-    'update-matches': {
+    'every-minute': {
         'task': 'dealership.tasks.check_orders_task',
         'schedule': crontab(),
+    },
+    'every-10-minute': {
+        'task': 'dealership.tasks.dealership_buy_cars_task',
+        'schedule': crontab(minute="*/10"),
     },
 }

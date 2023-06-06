@@ -10,7 +10,6 @@ from users.models import User
 
 def specification_default():
     return {
-        "registration_year": "",
         "transmission": "",
         "power": "",
         "fuel": "",
@@ -27,11 +26,7 @@ def specification_default():
 
 
 def discount_default():
-    return {
-        "discount": [
-            {"num_of_purchases": "percent"},
-        ],
-    }
+    return ({"num_of_purchases": "percent"},)
 
 
 class ActiveManager(models.Manager):
@@ -87,9 +82,9 @@ class Car(DateAndActiveMixin):
     fuel = models.CharField(max_length=20, choices=Fuel.choices, default=Fuel.DIESEL)
 
     class DriveType(models.TextChoices):
-        FRONT = "front-wheel"
-        REAR = "rear-wheel"
-        ALL = "4X4"
+        FRONT = "front"
+        REAR = "rear"
+        ALL_WHEEL = "all_wheel"
 
     drive_type = models.CharField(
         max_length=20, choices=DriveType.choices, default=DriveType.REAR
@@ -174,8 +169,6 @@ class DealershipCars(DateAndActiveMixin):
     )
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
-    quantity = models.PositiveIntegerField(default=0)
-
     objects = ActiveManager()
 
     def __str__(self):
@@ -186,7 +179,7 @@ class DealershipDiscount(DateAndActiveMixin):
     dealership = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField()
-    car = models.ForeignKey(Car, on_delete=models.CASCADE)
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, null=True)
     percent = models.FloatField(
         default=10, validators=[MinValueValidator(0.1), MaxValueValidator(100)]
     )
@@ -209,11 +202,12 @@ class DealershipUniqueCustomers(DateAndActiveMixin):
     def __str__(self):
         return str(self.customer)
 
+
 class SupplierDiscount(DateAndActiveMixin):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField()
-    car = models.ForeignKey(Car, on_delete=models.CASCADE)
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, null=True)
     percent = models.FloatField(
         default=10, validators=[MinValueValidator(0.1), MaxValueValidator(100)]
     )
@@ -226,14 +220,11 @@ class SupplierDiscount(DateAndActiveMixin):
         return str(self.pk) + " " + str(self.name)
 
 
-
 class DealershipCustomerSales(DateAndActiveMixin):
     dealership = models.ForeignKey(Dealership, on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
-    price = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="USD"
-    )
+    price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
 
     def __str__(self):
         return str(self.pk)
@@ -251,3 +242,14 @@ class SupplierDealershipSales(DateAndActiveMixin):
 
     def __str__(self):
         return str(self.pk)
+
+
+class SupplierUniqueCustomers(DateAndActiveMixin):
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
+    dealership = models.ForeignKey(Dealership, on_delete=models.CASCADE)
+    number_of_purchases = models.PositiveIntegerField(default=0)
+
+    objects = ActiveManager()
+
+    def __str__(self):
+        return str(self.supplier)

@@ -9,3 +9,4 @@ class User(AbstractUser):
         SUPPLIER = "Supplier"
 
     role = models.CharField(choices=Role.choices, null=True, max_length=20)
+    REQUIRED_FIELDS = ['email', 'role']

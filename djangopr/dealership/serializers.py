@@ -9,6 +9,8 @@ from .models import (Car, Customer, Dealership, DealershipCars,
 
 
 class CustomerSerializer(CountryFieldMixin, serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
     def get_balance(self, obj):
         if (
             self.context["request"].user == obj.user
@@ -22,16 +24,25 @@ class CustomerSerializer(CountryFieldMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Customer
-        fields = ("name", "surname", "gender", "date_of_birth", "country", "balance")
+        fields = (
+            "id",
+            "name",
+            "surname",
+            "gender",
+            "date_of_birth",
+            "country",
+            "balance",
+        )
 
 
 class PriceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipCars
-        fields = ("dealership", "price", "quantity")
+        fields = ("price", "quantity")
 
 
 class CarSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     price_list = PriceListSerializer(
         many=True, source="dealershipcars_set", read_only=True
     )
@@ -39,7 +50,7 @@ class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
         fields = (
-            "model",
+            "id" "model",
             "power",
             "transmission",
             "fuel",
@@ -65,12 +76,13 @@ class DealershipSerializer(CountryFieldMixin, serializers.ModelSerializer):
         else:
             return None
 
+    id = serializers.IntegerField(read_only=True)
     cars = DealershipCarsSerializer(many=True, source="dealershipcars", read_only=True)
     balance = serializers.SerializerMethodField("get_balance")
 
     class Meta:
         model = Dealership
-        fields = ("cars", "company_name", "location", "specification", "balance")
+        fields = ("id", "cars", "company_name", "location", "specification", "balance")
 
 
 class DealershipDiscountSerializer(serializers.ModelSerializer):
