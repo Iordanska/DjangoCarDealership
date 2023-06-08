@@ -48,6 +48,9 @@ class CustomerViewSet(
     search_fields = ["surname"]
     ordering_fields = ["surname"]
     permission_classes = [IsOwnerOrReadOnly | IsAdminUser]
+    a = Customer.objects.all().order_by("-updated_at").first().order["max_price"]
+    if a == "":
+        print(Customer.objects.exclude(order__max_price="").order_by("-updated_at"))
 
 
 class CarViewSet(

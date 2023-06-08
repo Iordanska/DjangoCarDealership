@@ -17,11 +17,11 @@ def specification_default():
     }
 
 
-# def order_default():
-#     return {
-#         "max_price": "",
-#         "car_model": "",
-#     }
+def order_default():
+    return {
+        "max_price": "",
+        "car_model": "",
+    }
 
 
 def discount_default():
@@ -49,8 +49,9 @@ class Customer(DateAndActiveMixin):
         decimal_places=2,
         default_currency="USD",
         editable=False,
-        default=100,
+        default=200,
     )
+    order = models.JSONField(default=order_default)
     user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
 
     objects = ActiveManager()
@@ -89,21 +90,10 @@ class Car(DateAndActiveMixin):
         max_length=20, choices=DriveType.choices, default=DriveType.REAR
     )
     registration_year = models.SmallIntegerField(validators=[year_validator])
-
     objects = ActiveManager()
 
     def __str__(self):
         return self.model
-
-
-class Order(DateAndActiveMixin):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    car = models.ForeignKey(Car, on_delete=models.CASCADE)
-    max_price = MoneyField(
-        max_digits=14,
-        decimal_places=2,
-        default_currency="USD",
-    )
 
 
 class Supplier(DateAndActiveMixin):
@@ -125,7 +115,6 @@ class SupplierCars(DateAndActiveMixin):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
-    quantity = models.PositiveIntegerField(default=0)
 
     objects = ActiveManager()
 
@@ -161,6 +150,7 @@ class DealershipCars(DateAndActiveMixin):
     )
     car = models.ForeignKey(Car, on_delete=models.CASCADE)
     price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    quantity = models.PositiveIntegerField(default=0)
     objects = ActiveManager()
 
     def __str__(self):

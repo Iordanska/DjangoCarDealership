@@ -6,24 +6,28 @@ from dealership.models import (
     DealershipCars,
     DealershipCustomerSales,
     DealershipUniqueCustomers,
-    Order,
 )
 
 
 def check_orders():
-    orders = Order.objects.all().order_by("-created_at")
-    if orders is None:
+    customers_with_orders = Customer.objects.exclude(order__max_price="").order_by(
+        "-updated_at"
+    )
+    if customers_with_orders is None:
         return
-    for order in orders:
-        buy_car(order)
-        order.is_active = False
-        order.save()
+    for customer in customers_with_orders:
+        buy_car(customer, customer.order)
+        customer.order["max_price"] = ""
+        customer.order["car_model"] = ""
+        customer.save()
 
 
-def buy_car(order):
+def buy_car(customer, order):
     cheapest_car = (
         DealershipCars.objects.filter(
-            Q(car=order.car) & Q(price__lte=order.max_price) & Q(quantity__gt=0)
+            Q(car__model=order["car_model"])
+            & Q(price__lte=float(order["max_price"]))
+            & Q(quantity__gt=0)
         )
         .order_by("price")
         .first()
@@ -39,11 +43,12 @@ def buy_car(order):
     dealership.balance += cheapest_car.price
     dealership.save()
 
-    customer = Customer.objects.get(pk=order.customer_id)
     customer.balance -= cheapest_car.price
     customer.save()
 
-    add_dealership_customer_history(dealership, customer, order.car, cheapest_car.price)
+    add_dealership_customer_history(
+        dealership, customer, cheapest_car.car, cheapest_car.price
+    )
     add_dealership_customers(dealership, customer)
 
 

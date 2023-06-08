@@ -1,4 +1,5 @@
 from django_countries.serializers import CountryFieldMixin
+from djmoney.contrib.django_rest_framework import MoneyField
 from rest_framework import serializers
 
 from .models import (
@@ -29,7 +30,15 @@ class CustomerSerializer(CountryFieldMixin, serializers.ModelSerializer):
         else:
             return None
 
+    order = serializers.JSONField()
     balance = serializers.SerializerMethodField("get_balance")
+    name = serializers.CharField()
+
+    def validate(self, data):
+        balance = self.context["request"].user.customer.balance.amount
+        if float(data["order"]["max_price"]) > balance:
+            raise serializers.ValidationError("max price cannot be bigger than balance")
+        return data
 
     class Meta:
         model = Customer
@@ -40,6 +49,7 @@ class CustomerSerializer(CountryFieldMixin, serializers.ModelSerializer):
             "gender",
             "date_of_birth",
             "country",
+            "order",
             "balance",
         )
 
