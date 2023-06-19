@@ -2,9 +2,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from core.filters import (
     CarsFilter,
@@ -23,6 +24,8 @@ from .models import (
     DealershipUniqueCustomers,
     Supplier,
     SupplierDealershipSales,
+    SupplierDiscount,
+    SupplierUniqueCustomers,
 )
 from .permissions import IsAdminOrReadOnly, IsOwner, IsOwnerOrReadOnly
 from .serializers import (
@@ -33,13 +36,18 @@ from .serializers import (
     DealershipSerializer,
     DealershipUniqueCustomersSerializer,
     SupplierDealershipSalesSerializer,
+    SupplierDiscountSerializer,
     SupplierSerializer,
+    SupplierUniqueCustomersSerializer,
 )
 
 
 class CustomerViewSet(
     CustomDestroyModelMixin,
-    ModelViewSet,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    ListModelMixin,
+    GenericViewSet,
 ):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
@@ -48,9 +56,17 @@ class CustomerViewSet(
     search_fields = ["surname"]
     ordering_fields = ["surname"]
     permission_classes = [IsOwnerOrReadOnly | IsAdminUser]
-    a = Customer.objects.all().order_by("-updated_at").first().order["max_price"]
-    if a == "":
-        print(Customer.objects.exclude(order__max_price="").order_by("-updated_at"))
+
+    @action(
+        methods=["get"],
+        detail=True,
+        serializer_class=DealershipCustomerSalesSerializer,
+        permission_classes=[IsOwner | IsAdminUser],
+    )
+    def history(self, request, pk=None):
+        queryset = DealershipCustomerSales.objects.filter(customer=self.kwargs["pk"])
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CarViewSet(
@@ -68,7 +84,10 @@ class CarViewSet(
 
 class DealershipViewSet(
     CustomDestroyModelMixin,
-    ModelViewSet,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    ListModelMixin,
+    GenericViewSet,
 ):
     queryset = Dealership.objects.all()
     serializer_class = DealershipSerializer
@@ -128,13 +147,30 @@ class DealershipDiscountViewSet(
     permission_classes = [IsAdminOrReadOnly]
 
 
-class SupplierViewSet(ModelViewSet, CustomDestroyModelMixin):
+class SupplierViewSet(
+    CustomDestroyModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    ListModelMixin,
+    GenericViewSet,
+):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
     search_fields = ["company_name"]
     ordering_fields = ["company_name", "number_of_buyers"]
     permission_classes = [IsOwnerOrReadOnly | IsAdminUser]
+
+    @action(
+        methods=["get"],
+        detail=True,
+        serializer_class=SupplierUniqueCustomersSerializer,
+        permission_classes=[IsOwner | IsAdminUser],
+    )
+    def customers(self, request, pk=None):
+        queryset = SupplierUniqueCustomers.objects.filter(supplier=self.kwargs["pk"])
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
         methods=["get"],
@@ -146,3 +182,15 @@ class SupplierViewSet(ModelViewSet, CustomDestroyModelMixin):
         queryset = SupplierDealershipSales.objects.filter(supplier=self.kwargs["pk"])
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SupplierDiscountViewSet(
+    CustomDestroyModelMixin,
+    ModelViewSet,
+):
+    serializer_class = SupplierDiscountSerializer
+    queryset = SupplierDiscount.objects.all()
+    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
+    search_fields = ["name"]
+    ordering_fields = ["percent", "end_date"]
+    permission_classes = [IsAdminOrReadOnly]

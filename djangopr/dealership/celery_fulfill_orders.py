@@ -98,7 +98,7 @@ def add_dealership_customers(dealership, customer):
         defaults={"number_of_purchases": 0},
     )
     obj.number_of_purchases += 1
-    obj.save()
+    obj.save(update_fields=["number_of_purchases"])
 
 
 def get_cheapest_car(selected_cars):

@@ -29,7 +29,7 @@ DEBUG = int(os.environ.get("DEBUG", default=1))
 
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 # For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 # Application definition
 
 
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'debug_toolbar',
     'rest_framework',
     'rest_framework.authtoken',
@@ -115,7 +116,7 @@ WSGI_APPLICATION = 'djangopr.wsgi.application'
 #         "NAME": os.environ.get("SQL_DATABASE",),
 #         "USER": os.environ.get("SQL_USER"),
 #         "PASSWORD": os.environ.get("SQL_PASSWORD"),
-#         "HOST": os.environ.get("SQL_HOST"),
+#         "HOST":  os.environ.get("SQL_HOST",),
 #         "PORT": os.environ.get("SQL_PORT",),
 #     }
 # }
@@ -229,7 +230,3 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULER='django_celery_beat.schedulers:DatabaseScheduler'
 
-
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
