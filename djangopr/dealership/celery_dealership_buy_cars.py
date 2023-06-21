@@ -26,7 +26,7 @@ def dealership_buy_cars():
 
     if not dealerships_updated:
         return
-    Dealership.objects.bulk_update(dealerships_updated, ["balance"])
+    Dealership.objects.bulk_update(dealerships_updated, ["balance", "updated_at"])
     for supplier_sale in supplier_sales_updated:
         SupplierDealershipSales.objects.bulk_create(supplier_sale)
 
@@ -149,7 +149,7 @@ def add_car(car, dealership):
         defaults={"quantity": 0, "price": 0},
     )
     car.quantity += 1
-    car.save(update_fields=["quantity"])
+    car.save(update_fields=["quantity", "updated_at"])
 
 
 def add_supplier_customers(supplier, dealership):
@@ -160,7 +160,7 @@ def add_supplier_customers(supplier, dealership):
     )
     if supplier_customers.number_of_purchases == 0:
         supplier.number_of_buyers += 1
-        supplier.save(update_fields=["number_of_buyers"])
+        supplier.save(update_fields=["number_of_buyers", "updated_at"])
 
     supplier_customers.number_of_purchases += 1
-    supplier_customers.save(update_fields=["number_of_purchases"])
+    supplier_customers.save(update_fields=["number_of_purchases", "updated_at"])

@@ -61,10 +61,21 @@ class CustomerViewSet(
         methods=["get"],
         detail=True,
         serializer_class=DealershipCustomerSalesSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def history(self, request, pk=None):
-        queryset = DealershipCustomerSales.objects.filter(customer=self.kwargs["pk"])
+        customer_id = self.kwargs["pk"]
+
+        queryset = DealershipCustomerSales.objects.filter(
+            customer=customer_id,
+            customer__user=request.user.id,
+        )
+        if request.user.is_staff:
+            queryset = DealershipCustomerSales.objects.filter(
+                customer=customer_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -102,12 +113,23 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=DealershipUniqueCustomersSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def customers(self, request, pk=None):
+        dealership_id = self.kwargs["pk"]
+
         queryset = DealershipUniqueCustomers.objects.filter(
-            dealership=self.kwargs["pk"]
+            dealership=dealership_id,
+            dealership__user=request.user.id,
         )
+
+        if request.user.is_staff:
+            queryset = DealershipUniqueCustomers.objects.filter(
+                dealership=dealership_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -115,10 +137,22 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=DealershipCustomerSalesSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def history_customers(self, request, pk=None):
-        queryset = DealershipCustomerSales.objects.filter(dealership=self.kwargs["pk"])
+        dealership_id = self.kwargs["pk"]
+
+        queryset = DealershipCustomerSales.objects.filter(
+            dealership=dealership_id,
+            dealership__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = DealershipCustomerSales.objects.filter(
+                dealership=dealership_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -126,10 +160,23 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=SupplierDealershipSalesSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def history_suppliers(self, request, pk=None):
-        queryset = SupplierDealershipSales.objects.filter(dealership=self.kwargs["pk"])
+        dealership_id = self.kwargs["pk"]
+
+        queryset = SupplierDealershipSales.objects.filter(
+            dealership=dealership_id,
+            dealership__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = SupplierDealershipSales.objects.filter(
+                dealership=dealership_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -165,10 +212,22 @@ class SupplierViewSet(
         methods=["get"],
         detail=True,
         serializer_class=SupplierUniqueCustomersSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def customers(self, request, pk=None):
-        queryset = SupplierUniqueCustomers.objects.filter(supplier=self.kwargs["pk"])
+        supplier_id = self.kwargs["pk"]
+
+        queryset = SupplierUniqueCustomers.objects.filter(
+            supplier=supplier_id,
+            supplier__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = SupplierUniqueCustomers.objects.filter(
+                supplier=supplier_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -176,10 +235,23 @@ class SupplierViewSet(
         methods=["get"],
         detail=True,
         serializer_class=SupplierDealershipSalesSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def history(self, request, pk=None):
-        queryset = SupplierDealershipSales.objects.filter(supplier=self.kwargs["pk"])
+        supplier_id = self.kwargs["pk"]
+
+        queryset = SupplierDealershipSales.objects.filter(
+            supplier=supplier_id,
+            supplier__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = SupplierDealershipSales.objects.filter(
+                supplier=supplier_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

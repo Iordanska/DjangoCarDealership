@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -167,8 +165,8 @@ class DealershipDiscount(DateAndActiveMixin):
     percent = models.FloatField(
         default=10, validators=[MinValueValidator(0.1), MaxValueValidator(100)]
     )
-    start_date = models.DateTimeField(default=timezone.now())
-    end_date = models.DateTimeField(default=timezone.now() + timedelta(days=1))
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
 
     objects = ActiveManager()
 
@@ -195,8 +193,8 @@ class SupplierDiscount(DateAndActiveMixin):
     percent = models.FloatField(
         default=10, validators=[MinValueValidator(0.1), MaxValueValidator(100)]
     )
-    start_date = models.DateTimeField(default=timezone.now())
-    end_date = models.DateTimeField(default=timezone.now() + timedelta(days=1))
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
 
     objects = ActiveManager()
 

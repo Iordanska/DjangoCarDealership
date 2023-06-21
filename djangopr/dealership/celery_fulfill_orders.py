@@ -36,9 +36,11 @@ def check_orders():
         order=JSONObject(max_price=Value(""), car_model=Value(""))
     )
 
-    Customer.objects.bulk_update(customers_updated, ["balance"])
-    DealershipCars.objects.bulk_update(dealership_cars_updated, ["quantity"])
-    Dealership.objects.bulk_update(dealerships_updated, ["balance"])
+    Customer.objects.bulk_update(customers_updated, ["balance", "updated_at"])
+    DealershipCars.objects.bulk_update(
+        dealership_cars_updated, ["quantity", "updated_at"]
+    )
+    Dealership.objects.bulk_update(dealerships_updated, ["balance", "updated_at"])
     DealershipCustomerSales.objects.bulk_create(dealership_sales_updated)
 
 
@@ -98,7 +100,7 @@ def add_dealership_customers(dealership, customer):
         defaults={"number_of_purchases": 0},
     )
     obj.number_of_purchases += 1
-    obj.save(update_fields=["number_of_purchases"])
+    obj.save(update_fields=["number_of_purchases", "updated_at"])
 
 
 def get_cheapest_car(selected_cars):
