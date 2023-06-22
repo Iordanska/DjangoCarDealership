@@ -7,67 +7,68 @@ from dealership.models import Customer
 
 from users.models import User
 
-
+CUSTOMER_ENDPOINT = "/api/v1/customer/"
 class CustomerApiTestCase(APITestCase):
-    def login(self):
+    def get_authorized_client(self):
         client = APIClient()
         client.force_authenticate(user=self.user)
         return client
 
     def setUp(self):
-        self.client = APIClient()
+        self.unauthorized_client = APIClient()
         self.user = User.objects.create_superuser(username="testuser", password="test")
         self.customer = CustomerFactory(name="Test Name")
         self.customer.user = self.user
         self.history = DealershipCustomerSalesFactory(customer=self.customer)
 
     def test_get_customers(self):
-        url = reverse("customer-list")
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(f'{CUSTOMER_ENDPOINT}')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(Customer.objects.count(), 1)
+        self.assertEqual(len(response.data), 1)
+
 
     def test_get_customer(self):
-        customer = Customer.objects.get()
-        url = reverse("customer-detail", kwargs={"pk": customer.id})
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(f'{CUSTOMER_ENDPOINT}{self.customer.pk}/')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(Customer.objects.count(), 1)
+        self.assertEqual(response.data['name'], self.customer.name)
 
     def test_update_customer(self):
-        customer = Customer.objects.get()
-        url = reverse("customer-detail", kwargs={"pk": customer.id})
 
-        updated_data = {
+        expected_data = {
             "name": "Test Customer 2",
             "surname": "Test Surname",
             "country": "GB",
             "order": {"max_price": "", "car_model": ""},
         }
 
-        response = self.client.put(url, data=updated_data, format="json")
+        response = self.unauthorized_client.put(f'{CUSTOMER_ENDPOINT}{self.customer.pk}/', expected_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.put(url, data=updated_data, format="json")
+
+        client = self.get_authorized_client()
+        response = client.put(f'{CUSTOMER_ENDPOINT}{self.customer.pk}/', expected_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Customer.objects.get().name, "Test Customer 2")
+        self.assertEqual(response.data['name'], expected_data['name'])
+
+        self.customer.refresh_from_db()
+        self.assertEqual(response.data['name'], self.customer.name)
 
     def test_delete_customer(self):
-        customer = Customer.objects.get()
-        url = reverse("customer-detail", kwargs={"pk": customer.id})
-        response = self.client.delete(url, format="json")
+        response = self.unauthorized_client.delete(f'{CUSTOMER_ENDPOINT}{self.customer.pk}/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.delete(url, format="json")
+
+        client = self.get_authorized_client()
+        response = client.delete(f'{CUSTOMER_ENDPOINT}{self.customer.pk}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Customer.objects.count(), 0)
+
+        self.customer.refresh_from_db()
+        response = client.get(f'{CUSTOMER_ENDPOINT}')
+        self.assertEquals(len(response.data), 0)
 
     def test_get_history(self):
-        customer = Customer.objects.get()
-        url = reverse("customer-history", kwargs={"pk": customer.id})
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(f'{CUSTOMER_ENDPOINT}{self.customer.pk}/history/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        client = self.login()
-        response = client.get(url, format="json")
+
+        client = self.get_authorized_client()
+        response = client.get(f'{CUSTOMER_ENDPOINT}{self.customer.pk}/history/')
+        self.assertEqual(len(response.data), 1)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(status.HTTP_200_OK, response.status_code)

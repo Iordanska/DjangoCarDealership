@@ -112,7 +112,7 @@ class DealershipFactory(DjangoModelFactory):
         model = Dealership
 
 
-class DealershipCarsFactory(factory.django.DjangoModelFactory):
+class DealershipCarsFactory(DjangoModelFactory):
     dealership = factory.SubFactory(DealershipFactory)
     car = factory.SubFactory(CarFactory)
     price = factory.fuzzy.FuzzyDecimal(10000, 20000)
@@ -122,7 +122,7 @@ class DealershipCarsFactory(factory.django.DjangoModelFactory):
         model = DealershipCars
 
 
-class DealershipUniqueCustomersFactory(factory.django.DjangoModelFactory):
+class DealershipUniqueCustomersFactory(DjangoModelFactory):
     dealership = factory.SubFactory(DealershipFactory)
     customer = factory.SubFactory(CustomerFactory)
     number_of_purchases = factory.fuzzy.FuzzyInteger(1, 10)
@@ -131,7 +131,7 @@ class DealershipUniqueCustomersFactory(factory.django.DjangoModelFactory):
         model = DealershipUniqueCustomers
 
 
-class DealershipCustomerSalesFactory(factory.django.DjangoModelFactory):
+class DealershipCustomerSalesFactory(DjangoModelFactory):
     dealership = factory.SubFactory(DealershipFactory)
     customer = factory.SubFactory(CustomerFactory)
     car = factory.SubFactory(CarFactory)
@@ -141,7 +141,7 @@ class DealershipCustomerSalesFactory(factory.django.DjangoModelFactory):
         model = DealershipCustomerSales
 
 
-class DealershipDiscountFactory(factory.django.DjangoModelFactory):
+class DealershipDiscountFactory(DjangoModelFactory):
     dealership = factory.SubFactory(DealershipFactory)
     car = factory.SubFactory(CarFactory)
     name = factory.Faker("word")
@@ -176,7 +176,7 @@ class SupplierFactory(DjangoModelFactory):
         model = Supplier
 
 
-class SupplierCarsFactory(factory.django.DjangoModelFactory):
+class SupplierCarsFactory(DjangoModelFactory):
     supplier = factory.SubFactory(SupplierFactory)
     car = factory.SubFactory(CarFactory)
     price = factory.fuzzy.FuzzyDecimal(10000, 20000)
@@ -185,7 +185,7 @@ class SupplierCarsFactory(factory.django.DjangoModelFactory):
         model = SupplierCars
 
 
-class SupplierUniqueCustomersFactory(factory.django.DjangoModelFactory):
+class SupplierUniqueCustomersFactory(DjangoModelFactory):
     supplier = factory.SubFactory(SupplierFactory)
     dealership = factory.SubFactory(DealershipFactory)
     number_of_purchases = factory.fuzzy.FuzzyInteger(1, 10)
@@ -194,7 +194,7 @@ class SupplierUniqueCustomersFactory(factory.django.DjangoModelFactory):
         model = SupplierUniqueCustomers
 
 
-class SupplierDealershipSalesFactory(factory.django.DjangoModelFactory):
+class SupplierDealershipSalesFactory(DjangoModelFactory):
     supplier = factory.SubFactory(SupplierFactory)
     dealership = factory.SubFactory(DealershipFactory)
     car = factory.SubFactory(CarFactory)
@@ -204,7 +204,7 @@ class SupplierDealershipSalesFactory(factory.django.DjangoModelFactory):
         model = SupplierDealershipSales
 
 
-class SupplierDiscountFactory(factory.django.DjangoModelFactory):
+class SupplierDiscountFactory(DjangoModelFactory):
     supplier = factory.SubFactory(SupplierFactory)
     car = factory.SubFactory(CarFactory)
     name = factory.Faker("word")

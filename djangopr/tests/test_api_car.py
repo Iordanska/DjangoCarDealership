@@ -1,62 +1,79 @@
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from dealership.factory import CarFactory
-from dealership.models import Car
 from users.models import User
 
-
+CAR_ENDPOINT = "/api/v1/car/"
 class CarApiTestCase(APITestCase):
-    def login(self):
+    def get_authorized_client(self):
         client = APIClient()
         client.force_authenticate(user=self.user)
         return client
 
     def setUp(self):
         self.user = User.objects.create_superuser(username="testuser", password="test")
-        self.client = APIClient()
+        self.unauthorized_client = APIClient()
         self.car = CarFactory(model="Test Car 1")
         self.car.user = self.user
 
     def test_get_cars(self):
-        url = reverse("car-list")
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(f'{CAR_ENDPOINT}')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(Car.objects.count(), 1)
+        self.assertEqual(len(response.data),1)
 
     def test_get_car(self):
-        car = Car.objects.get()
-        url = reverse("car-detail", kwargs={"pk": car.id})
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(f'{CAR_ENDPOINT}{self.car.pk}/')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(Car.objects.count(), 1)
+        self.assertEqual(response.data['model'], self.car.model)
 
     def test_create_car(self):
-        url = reverse("car-list")
-        response = self.client.post(url, self.data, format="json")
-        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
-        self.assertEquals(Car.objects.count(), 2)
 
-    def test_update_car(self):
-        car = Car.objects.get()
-        url = reverse("car-detail", kwargs={"pk": car.id})
-
-        updated_data = {
+        expected_data = {
             "model": "Test model 2",
             "registration_year": "2000",
         }
 
-        response = self.client.put(url, data=updated_data, format="json")
+        response = self.unauthorized_client.post(f'{CAR_ENDPOINT}')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.put(url, data=updated_data, format="json")
+
+        client = self.get_authorized_client()
+        response = client.post(f'{CAR_ENDPOINT}', expected_data)
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+        self.assertEquals(response.data['model'], expected_data['model'])
+
+        self.car.refresh_from_db()
+        response = client.get(f'{CAR_ENDPOINT}')
+        self.assertEquals(len(response.data), 2)
+
+    def test_update_car(self):
+
+        expected_data = {
+            "model": "Test model 2",
+            "registration_year": "2000",
+        }
+
+        response = self.unauthorized_client.put(f'{CAR_ENDPOINT}{self.car.pk}/', expected_data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        client = self.get_authorized_client()
+        response = client.put(f'{CAR_ENDPOINT}{self.car.pk}/',expected_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Car.objects.get().model, "Test model 2")
+        self.assertEqual(response.data['model'], expected_data['model'])
+
+        self.car.refresh_from_db()
+        self.assertEqual(response.data['model'], self.car.model)
+
 
     def test_delete_car(self):
-        car = Car.objects.get()
-        url = reverse("car-detail", kwargs={"pk": car.id})
-        response = self.client.delete(url, format="json")
+        response = self.unauthorized_client.delete(f'{CAR_ENDPOINT}{self.car.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        client = self.get_authorized_client()
+        response = client.delete(f'{CAR_ENDPOINT}{self.car.pk}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Car.objects.count(), 0)
+
+        self.car.refresh_from_db()
+        response = client.get(f'{CAR_ENDPOINT}')
+        self.assertEquals(len(response.data), 0)
+
