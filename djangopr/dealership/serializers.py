@@ -2,7 +2,7 @@ from _decimal import Decimal
 from django_countries.serializers import CountryFieldMixin
 from rest_framework import serializers
 
-from .models import (
+from dealership.models import (
     Car,
     Customer,
     Dealership,

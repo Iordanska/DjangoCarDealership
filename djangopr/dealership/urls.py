@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .views import (
+from dealership.views import (
     CarViewSet,
     CustomerViewSet,
     DealershipDiscountViewSet,

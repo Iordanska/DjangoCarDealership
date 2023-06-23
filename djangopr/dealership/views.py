@@ -15,7 +15,7 @@ from core.filters import (
 )
 from core.mixins import CustomDestroyModelMixin
 
-from .models import (
+from dealership.models import (
     Car,
     Customer,
     Dealership,
@@ -27,8 +27,8 @@ from .models import (
     SupplierDiscount,
     SupplierUniqueCustomers,
 )
-from .permissions import IsAdminOrReadOnly, IsOwner, IsOwnerOrReadOnly
-from .serializers import (
+from dealership.permissions import IsAdminOrReadOnly, IsOwner, IsOwnerOrReadOnly
+from dealership.serializers import (
     CarSerializer,
     CustomerSerializer,
     DealershipCustomerSalesSerializer,

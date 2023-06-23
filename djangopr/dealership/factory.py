@@ -10,7 +10,7 @@ from factory.django import DjangoModelFactory
 
 from users.models import User
 
-from .models import (
+from dealership.models import (
     Car,
     Customer,
     Dealership,
@@ -90,7 +90,6 @@ class DealershipFactory(DjangoModelFactory):
     company_name = factory.Faker("first_name")
     location = factory.fuzzy.FuzzyChoice(COUNTRIES)
     balance = factory.fuzzy.FuzzyDecimal(50000.00, 100000.00)
-
     specification = factory.Dict(
         {
             "transmission": "",
@@ -166,6 +165,7 @@ class SupplierFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
+
         user = UserFactory(role="Supplier")
         supplier = model_class.objects.create(user=user, **kwargs)
         supplier.save()

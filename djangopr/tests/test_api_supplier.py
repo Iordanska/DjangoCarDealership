@@ -10,109 +10,154 @@ from dealership.factory import (
     SupplierDiscountFactory,
     SupplierDealershipSalesFactory,
     SupplierUniqueCustomersFactory,
+    UserFactory,
 )
-from dealership.models import Supplier, SupplierDiscount
 from users.models import User
+
+SUPPLIER_ENDPOINT = "/api/v1/supplier/"
+SUPPLIER_DISCOUNT_ENDPOINT = "/api/v1/discount_supplier/"
 
 
 class SupplierApiTestCase(APITestCase):
-    def login(self):
+    def get_authorized_client(self):
         client = APIClient()
-        client.force_authenticate(user=self.user)
+        client.force_authenticate(user=self.supplier.user)
+        return client
+
+    def get_another_user_authorized_client(self):
+        client = APIClient()
+        client.force_authenticate(user=self.another_user)
         return client
 
     def setUp(self):
-        self.user = User.objects.create_superuser(username="testuser", password="test")
-        self.client = APIClient()
+        self.unauthorized_client = APIClient()
         self.supplier = SupplierFactory(company_name="Test Supplier 1")
-        self.supplier.user = self.user
         self.customers = SupplierUniqueCustomersFactory(supplier=self.supplier)
         self.history = SupplierDealershipSalesFactory(supplier=self.supplier)
+        self.another_user = UserFactory(role="dealership")
 
     def test_get_suppliers(self):
-        url = reverse("supplier-list")
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(f"{SUPPLIER_ENDPOINT}")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(Supplier.objects.count(), 1)
+        self.assertEqual(len(response.data), 1)
 
     def test_get_supplier(self):
-        supplier = Supplier.objects.get()
-        url = reverse("supplier-detail", kwargs={"pk": supplier.id})
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(
+            f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/"
+        )
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(Supplier.objects.count(), 1)
+        self.assertEqual(response.data["company_name"], self.supplier.company_name)
 
     def test_update_supplier(self):
-        supplier = Supplier.objects.get()
-        url = reverse("supplier-detail", kwargs={"pk": supplier.id})
-
-        updated_data = {
+        expected_data = {
             "company_name": "Test Supplier 2",
         }
-        response = self.client.put(url, data=updated_data, format="json")
+        response = self.unauthorized_client.put(
+            f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/", expected_data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.put(url, data=updated_data, format="json")
+
+        client = self.get_another_user_authorized_client()
+        response = client.put(
+            f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/", expected_data, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        client = self.get_authorized_client()
+        response = client.put(
+            f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/", expected_data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(Supplier.objects.get().company_name, "Test Supplier 2")
+        self.assertEqual(response.data["company_name"], expected_data["company_name"])
+
+        self.supplier.refresh_from_db()
+        self.assertEqual(response.data["company_name"], self.supplier.company_name)
 
     def test_delete_supplier(self):
-        supplier = Supplier.objects.get()
-        url = reverse("supplier-detail", kwargs={"pk": supplier.id})
-        response = self.client.delete(url, format="json")
+        response = self.unauthorized_client.delete(
+            f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/"
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.delete(url, format="json")
+
+        client = self.get_another_user_authorized_client()
+        response = client.delete(f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        client = self.get_authorized_client()
+        response = client.delete(f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Supplier.objects.count(), 0)
+
+        self.supplier.refresh_from_db()
+        response = client.get(f"{SUPPLIER_ENDPOINT}")
+        self.assertEquals(len(response.data), 0)
 
     def test_get_supplier_customers(self):
-        supplier = Supplier.objects.get()
-        url = reverse("supplier-customers", kwargs={"pk": supplier.id})
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(
+            f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/customers/"
+        )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        client = self.login()
-        response = client.get(url, format="json")
-        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        client = self.get_another_user_authorized_client()
+        response = client.get(f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/customers/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        client = self.get_authorized_client()
+        incorrect_id = 10
+        response = client.get(f"{SUPPLIER_ENDPOINT}{incorrect_id}/customers/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        client = self.get_authorized_client()
+        response = client.get(f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/customers/")
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_supplier_history(self):
-        supplier = Supplier.objects.get()
-        url = reverse("supplier-history", kwargs={"pk": supplier.id})
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(
+            f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/history/"
+        )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        client = self.login()
-        response = client.get(url, format="json")
-        self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+        client = self.get_another_user_authorized_client()
+        response = client.get(f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/history/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        client = self.get_authorized_client()
+        incorrect_id = 10
+        response = client.get(f"{SUPPLIER_ENDPOINT}{incorrect_id}/history/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        client = self.get_authorized_client()
+        response = client.get(f"{SUPPLIER_ENDPOINT}{self.supplier.pk}/history/")
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 class SupplierDiscountApiTestCase(APITestCase):
-    def login(self):
+    def get_authorized_client(self):
         client = APIClient()
         client.force_authenticate(user=self.user)
         return client
 
     def setUp(self):
         self.user = User.objects.create_superuser(username="testuser", password="test")
-        self.client = APIClient()
-        self.supplier = SupplierDiscountFactory(name="Test Discount")
-        self.supplier.user = self.user
+        self.unauthorized_client = APIClient()
+        self.discount = SupplierDiscountFactory(name="Test Discount 1")
+        self.discount.user = self.user
 
     def test_get_discounts(self):
-        url = reverse("supplierdiscount-list")
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(f"{SUPPLIER_DISCOUNT_ENDPOINT}")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(SupplierDiscount.objects.count(), 1)
+        self.assertEqual(len(response.data), 1)
 
     def test_get_discount(self):
-        discount = Supplier.objects.get()
-        url = reverse("supplierdiscount-detail", kwargs={"pk": discount.id})
-        response = self.client.get(url, format="json")
+        response = self.unauthorized_client.get(
+            f"{SUPPLIER_DISCOUNT_ENDPOINT}{self.discount.pk}/"
+        )
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(SupplierDiscount.objects.count(), 1)
+        self.assertEqual(response.data["name"], self.discount.name)
 
     def test_create_discount(self):
-        url = reverse("supplierdiscount-list")
-        data = {
+        expected_data = {
             "name": "Test Discount 2",
             "description": "Test Description",
             "supplier": "1",
@@ -120,18 +165,20 @@ class SupplierDiscountApiTestCase(APITestCase):
             "start_date": timezone.now(),
             "end_date": timezone.now() + timedelta(days=1),
         }
-        response = self.client.post(url, data=data, format="json")
+        response = self.unauthorized_client.post(f"{SUPPLIER_DISCOUNT_ENDPOINT}")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.post(url, data, format="json")
+
+        client = self.get_authorized_client()
+        response = client.post(f"{SUPPLIER_DISCOUNT_ENDPOINT}", expected_data)
         self.assertEquals(response.status_code, status.HTTP_201_CREATED)
-        self.assertEquals(SupplierDiscount.objects.count(), 2)
+        self.assertEquals(response.data["name"], expected_data["name"])
+
+        self.discount.refresh_from_db()
+        response = client.get(f"{SUPPLIER_DISCOUNT_ENDPOINT}")
+        self.assertEquals(len(response.data), 2)
 
     def test_update_discount(self):
-        discount = SupplierDiscount.objects.get()
-        url = reverse("supplierdiscount-detail", kwargs={"pk": discount.id})
-
-        updated_data = {
+        expected_data = {
             "name": "Test Discount 2",
             "description": "Test Description",
             "supplier": "1",
@@ -139,19 +186,31 @@ class SupplierDiscountApiTestCase(APITestCase):
             "start_date": timezone.now(),
             "end_date": timezone.now() + timedelta(days=1),
         }
-        response = self.client.put(url, data=updated_data, format="json")
+        response = self.unauthorized_client.put(
+            f"{SUPPLIER_DISCOUNT_ENDPOINT}{self.discount.pk}/", expected_data
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.put(url, data=updated_data, format="json")
+
+        client = self.get_authorized_client()
+        response = client.put(
+            f"{SUPPLIER_DISCOUNT_ENDPOINT}{self.discount.pk}/", expected_data
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(SupplierDiscount.objects.get().name, "Test Discount 2")
+        self.assertEqual(response.data["name"], expected_data["name"])
+
+        self.discount.refresh_from_db()
+        self.assertEqual(response.data["name"], self.discount.name)
 
     def test_delete_discount(self):
-        discount = SupplierDiscount.objects.get()
-        url = reverse("supplierdiscount-detail", kwargs={"pk": discount.id})
-        response = self.client.delete(url, format="json")
+        response = self.unauthorized_client.delete(
+            f"{SUPPLIER_DISCOUNT_ENDPOINT}{self.discount.pk}/"
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        client = self.login()
-        response = client.delete(url, format="json")
+
+        client = self.get_authorized_client()
+        response = client.delete(f"{SUPPLIER_DISCOUNT_ENDPOINT}{self.discount.pk}/")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(SupplierDiscount.objects.count(), 0)
+
+        self.discount.refresh_from_db()
+        response = client.get(f"{SUPPLIER_DISCOUNT_ENDPOINT}")
+        self.assertEquals(len(response.data), 0)
