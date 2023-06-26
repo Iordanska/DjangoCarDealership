@@ -1,8 +1,8 @@
+from _decimal import Decimal
 from django_countries.serializers import CountryFieldMixin
-from djmoney.contrib.django_rest_framework import MoneyField
 from rest_framework import serializers
 
-from .models import (
+from dealership.models import (
     Car,
     Customer,
     Dealership,
@@ -36,7 +36,9 @@ class CustomerSerializer(CountryFieldMixin, serializers.ModelSerializer):
 
     def validate(self, data):
         balance = self.context["request"].user.customer.balance.amount
-        if float(data["order"]["max_price"]) > balance:
+        if data["order"]["max_price"] == "":
+            return data
+        if Decimal(data["order"]["max_price"]) > balance:
             raise serializers.ValidationError("max price cannot be bigger than balance")
         return data
 
@@ -57,7 +59,7 @@ class CustomerSerializer(CountryFieldMixin, serializers.ModelSerializer):
 class PriceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipCars
-        fields = ("price", "quantity")
+        fields = ("dealership", "price", "quantity")
 
 
 class CarSerializer(serializers.ModelSerializer):
@@ -83,7 +85,7 @@ class CarSerializer(serializers.ModelSerializer):
 class DealershipCarsSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealershipCars
-        fields = ("price", "quantity")
+        fields = ("car", "price", "quantity")
 
 
 class DealershipSerializer(CountryFieldMixin, serializers.ModelSerializer):
@@ -169,7 +171,7 @@ class SupplierDiscountSerializer(serializers.ModelSerializer):
 class SupplierUniqueCustomersSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplierUniqueCustomers
-        fields = ("supplier", "customer", "number_of_purchases")
+        fields = ("supplier", "dealership", "number_of_purchases")
 
 
 class SupplierDealershipSalesSerializer(serializers.ModelSerializer):

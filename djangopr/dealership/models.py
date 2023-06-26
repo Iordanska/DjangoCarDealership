@@ -11,7 +11,6 @@ from users.models import User
 def specification_default():
     return {
         "transmission": "",
-        "power": "",
         "fuel": "",
         "drive_type": "",
     }
@@ -49,7 +48,7 @@ class Customer(DateAndActiveMixin):
         decimal_places=2,
         default_currency="USD",
         editable=False,
-        default=200,
+        default=0,
     )
     order = models.JSONField(default=order_default)
     user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
@@ -134,7 +133,7 @@ class Dealership(DateAndActiveMixin):
         decimal_places=2,
         default_currency="USD",
         editable=False,
-        default=50000,
+        default=0,
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE, editable=False)
 
@@ -203,10 +202,12 @@ class SupplierDiscount(DateAndActiveMixin):
 
 
 class DealershipCustomerSales(DateAndActiveMixin):
-    dealership = models.ForeignKey(Dealership, on_delete=models.CASCADE)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    car = models.ForeignKey(Car, on_delete=models.CASCADE)
-    price = MoneyField(max_digits=14, decimal_places=2, default_currency="USD")
+    dealership = models.ForeignKey(Dealership, on_delete=models.CASCADE, editable=False)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, editable=False)
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, editable=False)
+    price = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="USD", editable=False
+    )
 
     def __str__(self):
         return str(self.pk)
@@ -227,9 +228,9 @@ class SupplierDealershipSales(DateAndActiveMixin):
 
 
 class SupplierUniqueCustomers(DateAndActiveMixin):
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
-    dealership = models.ForeignKey(Dealership, on_delete=models.CASCADE)
-    number_of_purchases = models.PositiveIntegerField(default=0)
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, editable=False)
+    dealership = models.ForeignKey(Dealership, on_delete=models.CASCADE, editable=False)
+    number_of_purchases = models.PositiveIntegerField(default=0, editable=False)
 
     objects = ActiveManager()
 

@@ -2,9 +2,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from core.filters import (
     CarsFilter,
@@ -14,7 +15,7 @@ from core.filters import (
 )
 from core.mixins import CustomDestroyModelMixin
 
-from .models import (
+from dealership.models import (
     Car,
     Customer,
     Dealership,
@@ -23,9 +24,11 @@ from .models import (
     DealershipUniqueCustomers,
     Supplier,
     SupplierDealershipSales,
+    SupplierDiscount,
+    SupplierUniqueCustomers,
 )
-from .permissions import IsAdminOrReadOnly, IsOwner, IsOwnerOrReadOnly
-from .serializers import (
+from dealership.permissions import IsAdminOrReadOnly, IsOwner, IsOwnerOrReadOnly
+from dealership.serializers import (
     CarSerializer,
     CustomerSerializer,
     DealershipCustomerSalesSerializer,
@@ -33,13 +36,18 @@ from .serializers import (
     DealershipSerializer,
     DealershipUniqueCustomersSerializer,
     SupplierDealershipSalesSerializer,
+    SupplierDiscountSerializer,
     SupplierSerializer,
+    SupplierUniqueCustomersSerializer,
 )
 
 
 class CustomerViewSet(
     CustomDestroyModelMixin,
-    ModelViewSet,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    ListModelMixin,
+    GenericViewSet,
 ):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
@@ -48,9 +56,28 @@ class CustomerViewSet(
     search_fields = ["surname"]
     ordering_fields = ["surname"]
     permission_classes = [IsOwnerOrReadOnly | IsAdminUser]
-    a = Customer.objects.all().order_by("-updated_at").first().order["max_price"]
-    if a == "":
-        print(Customer.objects.exclude(order__max_price="").order_by("-updated_at"))
+
+    @action(
+        methods=["get"],
+        detail=True,
+        serializer_class=DealershipCustomerSalesSerializer,
+    )
+    def history(self, request, pk=None):
+        customer_id = self.kwargs["pk"]
+
+        queryset = DealershipCustomerSales.objects.filter(
+            customer=customer_id,
+            customer__user=request.user.id,
+        )
+        if request.user.is_staff:
+            queryset = DealershipCustomerSales.objects.filter(
+                customer=customer_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CarViewSet(
@@ -68,7 +95,10 @@ class CarViewSet(
 
 class DealershipViewSet(
     CustomDestroyModelMixin,
-    ModelViewSet,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    ListModelMixin,
+    GenericViewSet,
 ):
     queryset = Dealership.objects.all()
     serializer_class = DealershipSerializer
@@ -83,12 +113,23 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=DealershipUniqueCustomersSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def customers(self, request, pk=None):
+        dealership_id = self.kwargs["pk"]
+
         queryset = DealershipUniqueCustomers.objects.filter(
-            dealership=self.kwargs["pk"]
+            dealership=dealership_id,
+            dealership__user=request.user.id,
         )
+
+        if request.user.is_staff:
+            queryset = DealershipUniqueCustomers.objects.filter(
+                dealership=dealership_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -96,10 +137,22 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=DealershipCustomerSalesSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def history_customers(self, request, pk=None):
-        queryset = DealershipCustomerSales.objects.filter(dealership=self.kwargs["pk"])
+        dealership_id = self.kwargs["pk"]
+
+        queryset = DealershipCustomerSales.objects.filter(
+            dealership=dealership_id,
+            dealership__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = DealershipCustomerSales.objects.filter(
+                dealership=dealership_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -107,10 +160,23 @@ class DealershipViewSet(
         methods=["get"],
         detail=True,
         serializer_class=SupplierDealershipSalesSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
     )
     def history_suppliers(self, request, pk=None):
-        queryset = SupplierDealershipSales.objects.filter(dealership=self.kwargs["pk"])
+        dealership_id = self.kwargs["pk"]
+
+        queryset = SupplierDealershipSales.objects.filter(
+            dealership=dealership_id,
+            dealership__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = SupplierDealershipSales.objects.filter(
+                dealership=dealership_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -128,7 +194,13 @@ class DealershipDiscountViewSet(
     permission_classes = [IsAdminOrReadOnly]
 
 
-class SupplierViewSet(ModelViewSet, CustomDestroyModelMixin):
+class SupplierViewSet(
+    CustomDestroyModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    ListModelMixin,
+    GenericViewSet,
+):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
@@ -139,10 +211,58 @@ class SupplierViewSet(ModelViewSet, CustomDestroyModelMixin):
     @action(
         methods=["get"],
         detail=True,
-        serializer_class=SupplierDealershipSalesSerializer,
-        permission_classes=[IsOwner | IsAdminUser],
+        serializer_class=SupplierUniqueCustomersSerializer,
     )
-    def history(self, request, pk=None):
-        queryset = SupplierDealershipSales.objects.filter(supplier=self.kwargs["pk"])
+    def customers(self, request, pk=None):
+        supplier_id = self.kwargs["pk"]
+
+        queryset = SupplierUniqueCustomers.objects.filter(
+            supplier=supplier_id,
+            supplier__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = SupplierUniqueCustomers.objects.filter(
+                supplier=supplier_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(instance=queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        methods=["get"],
+        detail=True,
+        serializer_class=SupplierDealershipSalesSerializer,
+    )
+    def history(self, request, pk=None):
+        supplier_id = self.kwargs["pk"]
+
+        queryset = SupplierDealershipSales.objects.filter(
+            supplier=supplier_id,
+            supplier__user=request.user.id,
+        )
+
+        if request.user.is_staff:
+            queryset = SupplierDealershipSales.objects.filter(
+                supplier=supplier_id,
+            )
+
+        if not queryset:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SupplierDiscountViewSet(
+    CustomDestroyModelMixin,
+    ModelViewSet,
+):
+    serializer_class = SupplierDiscountSerializer
+    queryset = SupplierDiscount.objects.all()
+    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
+    search_fields = ["name"]
+    ordering_fields = ["percent", "end_date"]
+    permission_classes = [IsAdminOrReadOnly]

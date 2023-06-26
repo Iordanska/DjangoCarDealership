@@ -11,7 +11,7 @@ app.autodiscover_tasks()
 
 app.conf.CELERYBEAT_SCHEDULE = {
     'every-minute': {
-        'task': 'dealership.tasks.check_orders_task',
+        'task': 'dealership.tasks.fulfill_orders_task',
         'schedule': crontab(),
     },
     'every-10-minute': {

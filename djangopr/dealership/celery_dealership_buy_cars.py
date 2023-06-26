@@ -1,10 +1,9 @@
-from django.db.models import Count, Q
+from _decimal import Decimal
+from django.db.models import Q
 
 from dealership.models import (
-    Car,
     Dealership,
     DealershipCars,
-    DealershipCustomerSales,
     SupplierCars,
     SupplierDealershipSales,
     SupplierDiscount,
@@ -13,61 +12,63 @@ from dealership.models import (
 
 
 def dealership_buy_cars():
-    dealerships = Dealership.objects.all()
+    dealerships_updated = []
+    supplier_sales_updated = []
+    dealerships = Dealership.objects.filter(balance__gte=0)
     for dealership in dealerships:
         selected_cars = select_cars(dealership)
-        buy_cars(dealership, selected_cars)
+        if not selected_cars:
+            return
+        dealership_updated, sales_updated = buy_cars(dealership, selected_cars)
+        if dealership_updated:
+            dealerships_updated.append(dealership_updated)
+            supplier_sales_updated.append(sales_updated)
+
+    if not dealerships_updated:
+        return
+    Dealership.objects.bulk_update(dealerships_updated, ["balance", "updated_at"])
+    for supplier_sale in supplier_sales_updated:
+        SupplierDealershipSales.objects.bulk_create(supplier_sale)
 
 
 def select_cars(dealership):
-    if dealership.balance == 0:
-        return
-
-    q_objects = Q(quantity__gt=0)
+    q_objects = Q()
     for key, value in dealership.specification.items():
         if value:
-            q_objects.add(Q(**{"car" + "__" + key: value}), Q.AND)
+            q_objects.add(Q(**{"car__" + key: value}), Q.AND)
 
     selected_cars = SupplierCars.objects.filter(q_objects)
 
     # Цена с учёток скидок
     car_price_list = get_discount_pricelist(dealership, selected_cars)
     # сортировка по новой цене
-    car_list_sorted = sorted(car_price_list, key=lambda tup: tup[1])
+    car_list_sorted = sorted(car_price_list, key=lambda car: car[1])
     return car_list_sorted
 
 
-#
-#
 def buy_cars(dealership, car_list_sorted):
-    if car_list_sorted is None:
-        return
+    sales_updated = []
 
-    for obj in car_list_sorted:
-        id = SupplierCars.objects.get(pk=obj[0])
-        price = obj[1]
+    for car in car_list_sorted:
+        supplier_car = SupplierCars.objects.get(pk=car[0])
+        price = car[1]
 
         while dealership.balance.amount >= price:
-            change_balance(dealership, price)
-            add_car(id.car, dealership)
-            add_supplier_dealership_history(id.supplier, dealership, id.car, price)
+            dealership.balance.amount -= price
+            add_car(supplier_car.car, dealership)
+            add_supplier_customers(supplier_car.supplier, dealership)
+            sales_updated.append(
+                SupplierDealershipSales(
+                    supplier=supplier_car.supplier,
+                    dealership=dealership,
+                    car=supplier_car.car,
+                    price=price,
+                )
+            )
 
+    dealership_updated = dealership
 
-def check_demand(dealership):
-    DealershipSales = DealershipCustomerSales.objects.filter(dealership=dealership)
-
-    if DealershipSales is None:
-        return
-
-    cars = (
-        DealershipSales.objects.annotate(count=Count("car"))
-        .order_by("-count")
-        .values_list("car", flat=True)
-    )
-
-    best_cars = Car.objects.filter(car__in=cars)
-
-    return best_cars
+    return dealership_updated, sales_updated
 
 
 def get_discount_pricelist(dealership, cars):
@@ -83,7 +84,6 @@ def get_discount_pricelist(dealership, cars):
 def get_car_discount_price(dealership, car):
     """Возвращает цену с учётом всех скидок"""
     new_price = None
-
     # цена со скидкой регулярного покупателя
     discount_price = get_regular_customer_discount_price(
         dealership, car.supplier, car.price
@@ -94,13 +94,13 @@ def get_car_discount_price(dealership, car):
     # проверить скидки
     discount_price = get_discount_price(car.id, car.supplier, car.price)
     if discount_price:
-        if discount_price < new_price or new_price is None:
+        if new_price is None or discount_price < new_price:
             new_price = discount_price
 
     if new_price is None:
         return car.price.amount
 
-    return new_price.amount
+    return new_price
 
 
 def get_discount_price(car, supplier, price):
@@ -110,7 +110,9 @@ def get_discount_price(car, supplier, price):
     if discount is None:
         return
 
-    return price * (100 - discount.percent) / 100
+    return (
+        price.amount * (Decimal(100.00) - Decimal(discount.percent)) / Decimal(100.00)
+    )
 
 
 def get_regular_customer_discount_price(dealership, supplier, price):
@@ -127,6 +129,8 @@ def get_regular_customer_discount_price(dealership, supplier, price):
     percent = None
 
     for key in supplier.discount.keys():
+        if key == "number_of_purchases":
+            return
         if num < int(key):
             percent = percent
         else:
@@ -135,36 +139,28 @@ def get_regular_customer_discount_price(dealership, supplier, price):
     if percent is None:
         return
 
-    return price * (100 - float(percent)) / 100
-
-
-#
-#
-def change_balance(dealership, price):
-    dealership.balance.amount -= price
+    return price * (Decimal(100.00) - Decimal(percent)) / Decimal(100)
 
 
 def add_car(car, dealership):
-    obj, created = DealershipCars.objects.get_or_create(
+    car, created = DealershipCars.objects.get_or_create(
         dealership=dealership,
         car=car,
         defaults={"quantity": 0, "price": 0},
     )
-    obj.quantity += 1
-    obj.save()
-
-
-def add_supplier_dealership_history(supplier, dealership, car, price):
-    SupplierDealershipSales.objects.create(
-        supplier=supplier, dealership=dealership, car=car, price=price
-    )
+    car.quantity += 1
+    car.save(update_fields=["quantity", "updated_at"])
 
 
 def add_supplier_customers(supplier, dealership):
-    obj, created = SupplierUniqueCustomers.objects.get_or_create(
+    supplier_customers, created = SupplierUniqueCustomers.objects.get_or_create(
         supplier=supplier,
         dealership=dealership,
         defaults={"number_of_purchases": 0},
     )
-    obj.number_of_purchases += 1
-    obj.save()
+    if supplier_customers.number_of_purchases == 0:
+        supplier.number_of_buyers += 1
+        supplier.save(update_fields=["number_of_buyers", "updated_at"])
+
+    supplier_customers.number_of_purchases += 1
+    supplier_customers.save(update_fields=["number_of_purchases", "updated_at"])

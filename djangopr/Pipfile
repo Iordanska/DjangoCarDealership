@@ -17,6 +17,8 @@ django-filter = "*"
 drf-yasg = "*"
 redis = "*"
 django-celery-beat = "*"
+factory-boy = "*"
+django-debug-toolbar = "*"
 
 [dev-packages]
 black = "*"
