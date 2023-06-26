@@ -20,16 +20,6 @@ DEALERSHIP_DISCOUNT_ENDPOINT = "/api/v1/discount_dealership/"
 
 
 class DealershipApiTestCase(APITestCase):
-    def get_authorized_client(self):
-        client = APIClient()
-        client.force_authenticate(user=self.dealership.user)
-        return client
-
-    def get_another_user_authorized_client(self):
-        client = APIClient()
-        client.force_authenticate(user=self.another_user)
-        return client
-
     def setUp(self):
         self.unauthorized_client = APIClient()
         self.dealership = DealershipFactory(company_name="Test Dealer 1")
@@ -42,8 +32,17 @@ class DealershipApiTestCase(APITestCase):
         )
         self.another_user = UserFactory(role="dealership")
 
+    def get_authorized_client(self, user):
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
     def test_get_dealerships(self):
         response = self.unauthorized_client.get(f"{DEALERSHIP_ENDPOINT}")
+        self.assertEqual(status.HTTP_401_UNAUTHORIZED, response.status_code)
+
+        client = self.get_authorized_client(user=self.dealership.user)
+        response = client.get(f"{DEALERSHIP_ENDPOINT}")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(len(response.data), 1)
 
@@ -51,6 +50,10 @@ class DealershipApiTestCase(APITestCase):
         response = self.unauthorized_client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/"
         )
+        self.assertEqual(status.HTTP_401_UNAUTHORIZED, response.status_code)
+
+        client = self.get_authorized_client(user=self.dealership.user)
+        response = client.get(f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(response.data["company_name"], self.dealership.company_name)
 
@@ -64,13 +67,13 @@ class DealershipApiTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_another_user_authorized_client()
+        client = self.get_authorized_client(user=self.another_user)
         response = client.put(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/", expected_data, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(self.dealership.user)
         response = client.put(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/", expected_data, format="json"
         )
@@ -86,11 +89,11 @@ class DealershipApiTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_another_user_authorized_client()
+        client = self.get_authorized_client(user=self.another_user)
         response = client.delete(f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.dealership.user)
         response = client.delete(f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -102,18 +105,18 @@ class DealershipApiTestCase(APITestCase):
         response = self.unauthorized_client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/customers/"
         )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_another_user_authorized_client()
+        client = self.get_authorized_client(user=self.another_user)
         response = client.get(f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/customers/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.dealership.user)
         incorrect_id = 10
         response = client.get(f"{DEALERSHIP_ENDPOINT}{incorrect_id}/customers/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.dealership.user)
         response = client.get(f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/customers/")
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -122,25 +125,25 @@ class DealershipApiTestCase(APITestCase):
         response = self.unauthorized_client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/history_customers/"
         )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         response = self.unauthorized_client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/history_customers/"
         )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_another_user_authorized_client()
+        client = self.get_authorized_client(user=self.another_user)
         response = client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/history_customers/"
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(self.another_user)
         incorrect_id = 10
         response = client.get(f"{DEALERSHIP_ENDPOINT}{incorrect_id}/history_customers/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.dealership.user)
         response = client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/history_customers/"
         )
@@ -151,20 +154,20 @@ class DealershipApiTestCase(APITestCase):
         response = self.unauthorized_client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/history_suppliers/"
         )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_another_user_authorized_client()
+        client = self.get_authorized_client(user=self.another_user)
         response = client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/history_suppliers/"
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.dealership.user)
         incorrect_id = 10
         response = client.get(f"{DEALERSHIP_ENDPOINT}{incorrect_id}/history_suppliers/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.dealership.user)
         response = client.get(
             f"{DEALERSHIP_ENDPOINT}{self.dealership.pk}/history_suppliers/"
         )
@@ -173,16 +176,16 @@ class DealershipApiTestCase(APITestCase):
 
 
 class DealershipDiscountApiTestCase(APITestCase):
-    def get_authorized_client(self):
-        client = APIClient()
-        client.force_authenticate(user=self.user)
-        return client
-
     def setUp(self):
         self.user = User.objects.create_superuser(username="testuser", password="test")
         self.unauthorized_client = APIClient()
         self.discount = DealershipDiscountFactory(name="Test Discount 1")
         self.discount.user = self.user
+
+    def get_authorized_client(self):
+        client = APIClient()
+        client.force_authenticate(user=self.user)
+        return client
 
     def test_get_discounts(self):
         response = self.unauthorized_client.get(f"{DEALERSHIP_DISCOUNT_ENDPOINT}")

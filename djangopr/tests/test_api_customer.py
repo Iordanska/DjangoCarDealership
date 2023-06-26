@@ -15,24 +15,23 @@ CUSTOMER_ENDPOINT = "/api/v1/customer/"
 
 
 class CustomerApiTestCase(APITestCase):
-    def get_authorized_client(self):
-        client = APIClient()
-        client.force_authenticate(user=self.customer.user)
-        return client
-
-    def get_another_user_authorized_client(self):
-        client = APIClient()
-        client.force_authenticate(user=self.another_user)
-        return client
-
     def setUp(self):
         self.unauthorized_client = APIClient()
         self.customer = CustomerFactory(name="Test Name")
         self.history = DealershipCustomerSalesFactory(customer=self.customer)
         self.another_user = UserFactory(role="dealership")
 
+    def get_authorized_client(self, user):
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
     def test_get_customers(self):
         response = self.unauthorized_client.get(f"{CUSTOMER_ENDPOINT}")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        client = self.get_authorized_client(user=self.customer.user)
+        response = client.get(f"{CUSTOMER_ENDPOINT}")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(len(response.data), 1)
 
@@ -40,6 +39,10 @@ class CustomerApiTestCase(APITestCase):
         response = self.unauthorized_client.get(
             f"{CUSTOMER_ENDPOINT}{self.customer.pk}/"
         )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        client = self.get_authorized_client(user=self.customer.user)
+        response = client.get(f"{CUSTOMER_ENDPOINT}{self.customer.pk}/")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(response.data["name"], self.customer.name)
 
@@ -56,13 +59,13 @@ class CustomerApiTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_another_user_authorized_client()
+        client = self.get_authorized_client(user=self.another_user)
         response = client.put(
             f"{CUSTOMER_ENDPOINT}{self.customer.pk}/", expected_data, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.customer.user)
         response = client.put(
             f"{CUSTOMER_ENDPOINT}{self.customer.pk}/", expected_data, format="json"
         )
@@ -78,11 +81,11 @@ class CustomerApiTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_another_user_authorized_client()
+        client = self.get_authorized_client(user=self.another_user)
         response = client.delete(f"{CUSTOMER_ENDPOINT}{self.customer.pk}/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.customer.user)
         response = client.delete(f"{CUSTOMER_ENDPOINT}{self.customer.pk}/")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -94,9 +97,9 @@ class CustomerApiTestCase(APITestCase):
         response = self.unauthorized_client.get(
             f"{CUSTOMER_ENDPOINT}{self.customer.pk}/history/"
         )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        client = self.get_authorized_client()
+        client = self.get_authorized_client(user=self.customer.user)
         incorrect_id = 10
         response = client.get(f"{CUSTOMER_ENDPOINT}{incorrect_id}/history/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

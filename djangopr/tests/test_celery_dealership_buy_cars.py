@@ -10,9 +10,7 @@ from dealership.factory import (
     SupplierFactory,
 )
 from dealership.models import (
-    Dealership,
     DealershipCars,
-    Supplier,
     SupplierDealershipSales,
     SupplierUniqueCustomers,
 )
@@ -41,23 +39,22 @@ class DealershipBuyCars(TestCase):
 
     def test_dealership_buy_cars(self):
         dealership_buy_cars()
-        dealership = Dealership.objects.get(id=1)
-        supplier = Supplier.objects.get(id=1)
+        self.dealership.refresh_from_db()
+        self.supplier.refresh_from_db()
         dealership_cars = DealershipCars.objects.get(id=1)
-        self.assertEqual(dealership.balance.amount, Decimal(0))
+        self.assertEqual(self.dealership.balance.amount, Decimal(0))
         self.assertEqual(dealership_cars.car.model, "Volga")
         self.assertEqual(dealership_cars.quantity, 5)
 
-        history = SupplierDealershipSales.objects.filter(supplier=supplier)
+        history = SupplierDealershipSales.objects.filter(supplier=self.supplier)
         self.assertEqual(history.count(), 5)
         self.assertEqual(history[0].dealership, self.dealership)
         self.assertEqual(history[0].car, self.car)
         self.assertEqual(history[0].price.amount, Decimal(3500))
 
         unique_customers = SupplierUniqueCustomers.objects.get(
-            supplier=supplier, dealership=dealership
+            supplier=self.supplier, dealership=self.dealership
         )
-        self.assertEqual(dealership.id, self.dealership.id)
         self.assertEqual(unique_customers.number_of_purchases, 5)
 
-        self.assertEqual(supplier.number_of_buyers, 1)
+        self.assertEqual(self.supplier.number_of_buyers, 1)

@@ -8,16 +8,16 @@ CAR_ENDPOINT = "/api/v1/car/"
 
 
 class CarApiTestCase(APITestCase):
-    def get_authorized_client(self):
-        client = APIClient()
-        client.force_authenticate(user=self.user)
-        return client
-
     def setUp(self):
         self.user = User.objects.create_superuser(username="testuser", password="test")
         self.unauthorized_client = APIClient()
         self.car = CarFactory(model="Test Car 1")
         self.car.user = self.user
+
+    def get_authorized_client(self):
+        client = APIClient()
+        client.force_authenticate(user=self.user)
+        return client
 
     def test_get_cars(self):
         response = self.unauthorized_client.get(f"{CAR_ENDPOINT}")

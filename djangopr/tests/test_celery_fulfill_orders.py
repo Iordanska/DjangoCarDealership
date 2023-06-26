@@ -10,9 +10,6 @@ from dealership.factory import (
     DealershipFactory,
 )
 from dealership.models import (
-    Customer,
-    Dealership,
-    DealershipCars,
     DealershipCustomerSales,
     DealershipUniqueCustomers,
 )
@@ -34,23 +31,23 @@ class FulfillOrdersTestCase(TestCase):
 
     def test_check_orders(self):
         check_orders()
-        dealership = Dealership.objects.get(id=1)
-        dealership_cars = DealershipCars.objects.get(id=1)
-        customer = Customer.objects.get(id=1)
+        self.dealership.refresh_from_db()
+        self.dealership_cars.refresh_from_db()
+        self.customer.refresh_from_db()
 
-        self.assertEqual(customer.balance.amount, Decimal(6500))
-        self.assertEqual(customer.order["max_price"], "")
-        self.assertEqual(customer.order["car_model"], "")
-        self.assertEqual(dealership.balance.amount, Decimal(23500))
-        self.assertEqual(dealership_cars.quantity, 1)
+        self.assertEqual(self.customer.balance.amount, Decimal(6500))
+        self.assertEqual(self.customer.order["max_price"], "")
+        self.assertEqual(self.customer.order["car_model"], "")
+        self.assertEqual(self.dealership.balance.amount, Decimal(23500))
+        self.assertEqual(self.dealership_cars.quantity, 1)
 
-        history = DealershipCustomerSales.objects.get(dealership=dealership)
+        history = DealershipCustomerSales.objects.get(dealership=self.dealership)
         self.assertEqual(history.customer, self.customer)
         self.assertEqual(history.car, self.car)
         self.assertEqual(history.price.amount, Decimal(3500))
 
         unique_customers = DealershipUniqueCustomers.objects.get(
-            dealership=dealership, customer=customer
+            dealership=self.dealership, customer=self.customer
         )
         self.assertEqual(unique_customers.id, self.customer.id)
         self.assertEqual(unique_customers.number_of_purchases, 1)
