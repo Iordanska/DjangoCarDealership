@@ -9,10 +9,21 @@ django-countries = "*"
 psycopg2 = "*"
 python-dotenv = "*"
 django-money = "*"
+djangorestframework = "*"
+djoser = "*"
+djangorestframework-simplejwt = "*"
+celery = "*"
+django-filter = "*"
+drf-yasg = "*"
+redis = "*"
+django-celery-beat = "*"
+factory-boy = "*"
+django-debug-toolbar = "*"
 
 [dev-packages]
 black = "*"
 isort = "*"
+django-debug-toolbar = "*"
 
 [requires]
 python_version = "3.10"

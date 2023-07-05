@@ -1,4 +1,5 @@
 from django.db import models
+from rest_framework.mixins import DestroyModelMixin
 
 
 class BaseTimestampedModel(models.Model):
@@ -28,3 +29,10 @@ class DateAndActiveMixin(BaseTimestampedModel, BaseActiveModel):
 
     class Meta:
         abstract = True
+
+
+class CustomDestroyModelMixin(DestroyModelMixin):
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save()
